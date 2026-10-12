@@ -1,0 +1,280 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  AUDITOR_INTERNAL
+  BENDAHARA
+  APPROVER_SPJ
+  STAFF_UNIT
+  VIEWER_ONLY
+}
+
+enum OrgType {
+  PDM
+  PCM
+  PRM
+  MAJELIS
+  LEMBAGA
+  ANAK_USAHA
+  SEKOLAH
+  MASJID
+  UNIT_USAHA
+}
+
+enum SpjStatus {
+  DRAFT
+  PENDING_LEVEL_1
+  PENDING_LEVEL_2
+  PENDING_LEVEL_3
+  PENDING_LEVEL_4
+  PENDING_LEVEL_5
+  APPROVED
+  REJECTED
+  REVISION_REQUIRED
+}
+
+enum RequestStatus {
+  DITERIMA
+  DALAM_PROSES
+  DISUBMIT
+  KOMPLIT
+  REVISI
+}
+
+enum SopCategory {
+  KEUANGAN
+  SDM
+  ASET
+  ORGANISASI
+}
+
+model Organization {
+  id              String            @id @default(uuid()) @db.Uuid
+  name            String            @db.VarChar(255)
+  code            String            @unique @db.VarChar(50)
+  level           Int               // 1: PDM, 2: PCM/Majelis, 3: PRM/Masjid/Sekolah
+  type            OrgType
+  parentId        String?           @map("parent_id") @db.Uuid
+  parent          Organization?     @relation("OrgHierarchy", fields: [parentId], references: [id])
+  children        Organization[]    @relation("OrgHierarchy")
+  address         String?
+  phone           String?           @db.VarChar(50)
+  email           String?           @db.VarChar(100)
+  isActive        Boolean           @default(true) @map("is_active")
+  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  users           User[]
+  spjs            Spj[]
+  documentRequests DocumentRequest[]
+  approvalConfig  ApprovalConfig?
+
+  @@map("organizations")
+}
+
+model User {
+  id              String        @id @default(uuid()) @db.Uuid
+  organizationId  String        @map("organization_id") @db.Uuid
+  organization    Organization  @relation(fields: [organizationId], references: [id])
+  email           String        @unique @db.VarChar(255)
+  fullName        String        @map("full_name") @db.VarChar(255)
+  role            UserRole      @default(STAFF_UNIT)
+  phone           String?       @db.VarChar(50)
+  avatarUrl       String?       @map("avatar_url")
+  isActive        Boolean       @default(true) @map("is_active")
+  createdAt       DateTime      @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  createdSpjs     Spj[]
+  auditRequests   DocumentRequest[] @relation("AuditorRequests")
+  spjApprovals    SpjApproval[]
+  spjAttachments  SpjAttachment[]
+  requestAttachments RequestAttachment[]
+
+  @@map("users")
+}
+
+model ApprovalConfig {
+  id              String         @id @default(uuid()) @db.Uuid
+  organizationId  String         @unique @map("organization_id") @db.Uuid
+  organization    Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name            String         @db.VarChar(255)
+  totalLevels     Int            @map("total_levels") // 1 to 5
+  isActive        Boolean        @default(true) @map("is_active")
+  createdAt       DateTime       @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime       @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  steps           ApprovalStep[]
+
+  @@map("approval_configs")
+}
+
+model ApprovalStep {
+  id              String         @id @default(uuid()) @db.Uuid
+  configId        String         @map("config_id") @db.Uuid
+  config          ApprovalConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+  levelNumber     Int            @map("level_number") // 1..5
+  levelName       String         @map("level_name") @db.VarChar(150)
+  requiredRole    UserRole       @default(APPROVER_SPJ) @map("required_role")
+  assignedUserId  String?        @map("assigned_user_id") @db.Uuid
+  createdAt       DateTime       @default(now()) @map("created_at") @db.Timestamptz
+
+  @@unique([configId, levelNumber])
+  @@map("approval_steps")
+}
+
+model Spj {
+  id              String         @id @default(uuid()) @db.Uuid
+  organizationId  String         @map("organization_id") @db.Uuid
+  organization    Organization   @relation(fields: [organizationId], references: [id])
+  createdBy       String         @map("created_by") @db.Uuid
+  creator         User           @relation(fields: [createdBy], references: [id])
+  nomorSpj        String         @unique @map("nomor_spj") @db.VarChar(100)
+  judulPengajuan  String         @map("judul_pengajuan") @db.VarChar(255)
+  deskripsi       String?
+  totalNominal    Decimal        @default(0) @map("total_nominal") @db.Decimal(15, 2)
+  periodeAudit    String         @map("periode_audit") @db.VarChar(50)
+  currentLevel    Int            @default(1) @map("current_level")
+  maxLevels       Int            @default(1) @map("max_levels")
+  status          SpjStatus      @default(DRAFT)
+  catatanRevisi   String?        @map("catatan_revisi")
+  submittedAt     DateTime?      @map("submitted_at") @db.Timestamptz
+  approvedAt      DateTime?      @map("approved_at") @db.Timestamptz
+  rejectedAt      DateTime?      @map("rejected_at") @db.Timestamptz
+  createdAt       DateTime       @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime       @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  approvals       SpjApproval[]
+  attachments     SpjAttachment[]
+
+  @@map("spjs")
+}
+
+model SpjApproval {
+  id              String         @id @default(uuid()) @db.Uuid
+  spjId           String         @map("spj_id") @db.Uuid
+  spj             Spj            @relation(fields: [spjId], references: [id], onDelete: Cascade)
+  levelNumber     Int            @map("level_number")
+  actorId         String         @map("actor_id") @db.Uuid
+  actor           User           @relation(fields: [actorId], references: [id])
+  action          String         @db.VarChar(50) // SUBMIT, APPROVE, REJECT, REVISION
+  notes           String?
+  actionDate      DateTime       @default(now()) @map("action_date") @db.Timestamptz
+
+  @@map("spj_approvals")
+}
+
+model SpjAttachment {
+  id              String         @id @default(uuid()) @db.Uuid
+  spjId           String         @map("spj_id") @db.Uuid
+  spj             Spj            @relation(fields: [spjId], references: [id], onDelete: Cascade)
+  fileKey         String         @map("file_key") @db.VarChar(500)
+  fileUrl         String         @map("file_url")
+  originalName    String         @map("original_name") @db.VarChar(255)
+  displayName     String         @map("display_name") @db.VarChar(255)
+  fileSize        BigInt         @default(0) @map("file_size")
+  fileType        String?        @map("file_type") @db.VarChar(100)
+  notes           String?
+  uploadedBy      String         @map("uploaded_by") @db.Uuid
+  uploader        User           @relation(fields: [uploadedBy], references: [id])
+  createdAt       DateTime       @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime       @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("spj_attachments")
+}
+
+model AuditTemplate {
+  id              String         @id @default(uuid()) @db.Uuid
+  name            String         @db.VarChar(255)
+  targetOrgType   OrgType        @map("target_org_type")
+  description     String?
+  defaultItems    Json           @default("[]") @map("default_items")
+  isActive        Boolean        @default(true) @map("is_active")
+  createdBy       String?        @map("created_by") @db.Uuid
+  createdAt       DateTime       @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime       @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("audit_templates")
+}
+
+model DocumentRequest {
+  id              String         @id @default(uuid()) @db.Uuid
+  organizationId  String         @map("organization_id") @db.Uuid
+  organization    Organization   @relation(fields: [organizationId], references: [id])
+  auditorId       String         @map("auditor_id") @db.Uuid
+  auditor         User           @relation("AuditorRequests", fields: [auditorId], references: [id])
+  periodeAudit    String         @map("periode_audit") @db.VarChar(50)
+  title           String         @db.VarChar(255)
+  descriptionHtml String         @map("description_html")
+  category        String         @default("KEUANGAN") @db.VarChar(50)
+  isSavedToMasterTemplate Boolean @default(false) @map("is_saved_to_master_template")
+  status          RequestStatus  @default(DITERIMA)
+  auditeeResponseNotes String?   @map("auditee_response_notes")
+  rejectionNotes  String?        @map("rejection_notes")
+  dueDate         DateTime?      @map("due_date") @db.Date
+  submittedAt     DateTime?      @map("submitted_at") @db.Timestamptz
+  verifiedAt      DateTime?      @map("verified_at") @db.Timestamptz
+  createdAt       DateTime       @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime       @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  attachments     RequestAttachment[]
+
+  @@map("document_requests")
+}
+
+model RequestAttachment {
+  id              String          @id @default(uuid()) @db.Uuid
+  requestId       String          @map("request_id") @db.Uuid
+  request         DocumentRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  fileKey         String          @map("file_key") @db.VarChar(500)
+  fileUrl         String          @map("file_url")
+  originalName    String          @map("original_name") @db.VarChar(255)
+  displayName     String          @map("display_name") @db.VarChar(255)
+  fileSize        BigInt          @default(0) @map("file_size")
+  fileType        String?         @map("file_type") @db.VarChar(100)
+  notes           String?
+  uploadedBy      String          @map("uploaded_by") @db.Uuid
+  uploader        User            @relation(fields: [uploadedBy], references: [id])
+  createdAt       DateTime        @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime        @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("request_attachments")
+}
+
+model Sop {
+  id              String         @id @default(uuid()) @db.Uuid
+  title           String         @db.VarChar(255)
+  category        SopCategory
+  levelScope      Int            @default(3) @map("level_scope") // 1..3
+  targetOrgType   String         @default("SEMUA") @map("target_org_type") @db.VarChar(50)
+  fileKey         String?        @map("file_key") @db.VarChar(500)
+  fileUrl         String         @map("file_url")
+  version         String         @default("1.0") @db.VarChar(50)
+  description     String?
+  publishedDate   DateTime       @default(now()) @map("published_date") @db.Date
+  createdBy       String?        @map("created_by") @db.Uuid
+  createdAt       DateTime       @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime       @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("sops")
+}
+
+model AuditLog {
+  id              String         @id @default(uuid()) @db.Uuid
+  userId          String?        @map("user_id") @db.Uuid
+  action          String         @db.VarChar(100)
+  entityType      String         @map("entity_type") @db.VarChar(50)
+  entityId        String?        @map("entity_id") @db.VarChar(100)
+  details         Json?          @default("{}")
+  ipAddress       String?        @map("ip_address") @db.VarChar(50)
+  createdAt       DateTime       @default(now()) @map("created_at") @db.Timestamptz
+
+  @@map("audit_logs")
+}
