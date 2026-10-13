@@ -9,14 +9,6 @@ export interface UnitRecord {
 
 export const ALL_UNITS: UnitRecord[] = [
   {
-    "id": 200,
-    "nama_unit": "Badan Pengurus Lazismu PDM Kota Yogyakarta",
-    "nama_unit_pendek": "LAZISMU-PDM",
-    "pemerhati": "Badan Pengurus Lazismu PDM",
-    "parent_unit_id": 17,
-    "tipe": "GROUP"
-  },
-  {
     "id": 1,
     "nama_unit": "PDM Kota Jogja",
     "nama_unit_pendek": "",
@@ -1229,7 +1221,7 @@ export const ALL_UNITS: UnitRecord[] = [
     "nama_unit": "KL Lazismu Danurejan",
     "nama_unit_pendek": "Lazismu Danurejan",
     "pemerhati": "",
-    "parent_unit_id":   200,
+    "parent_unit_id":   17,
     "tipe": "UNIT"
   },
   {
@@ -1237,7 +1229,7 @@ export const ALL_UNITS: UnitRecord[] = [
     "nama_unit": "KL Lazismu Gedongtengen",
     "nama_unit_pendek": "Lazismu Gedongtengen",
     "pemerhati": "",
-    "parent_unit_id":   200,
+    "parent_unit_id":   17,
     "tipe": "UNIT"
   },
   {
@@ -1245,7 +1237,7 @@ export const ALL_UNITS: UnitRecord[] = [
     "nama_unit": "KL Lazismu Gondokusuman",
     "nama_unit_pendek": "Lazismu Gondokusuman",
     "pemerhati": "",
-    "parent_unit_id":   200,
+    "parent_unit_id":   17,
     "tipe": "UNIT"
   },
   {
@@ -1253,7 +1245,7 @@ export const ALL_UNITS: UnitRecord[] = [
     "nama_unit": "KL Lazismu Gondomanan",
     "nama_unit_pendek": "Lazismu Gondomanan",
     "pemerhati": "",
-    "parent_unit_id":   200,
+    "parent_unit_id":   17,
     "tipe": "UNIT"
   },
   {
@@ -1261,7 +1253,7 @@ export const ALL_UNITS: UnitRecord[] = [
     "nama_unit": "KL Lazismu Jetis",
     "nama_unit_pendek": "Lazismu Jetis",
     "pemerhati": "",
-    "parent_unit_id":   200,
+    "parent_unit_id":   17,
     "tipe": "UNIT"
   },
   {
@@ -1269,7 +1261,7 @@ export const ALL_UNITS: UnitRecord[] = [
     "nama_unit": "KL Lazismu Kotagede",
     "nama_unit_pendek": "Lazismu Kotagede",
     "pemerhati": "",
-    "parent_unit_id":   200,
+    "parent_unit_id":   17,
     "tipe": "UNIT"
   },
   {
@@ -1277,7 +1269,7 @@ export const ALL_UNITS: UnitRecord[] = [
     "nama_unit": "KL Lazismu Kraton",
     "nama_unit_pendek": "Lazismu Kraton",
     "pemerhati": "",
-    "parent_unit_id":   200,
+    "parent_unit_id":   17,
     "tipe": "UNIT"
   },
   {
@@ -1285,7 +1277,7 @@ export const ALL_UNITS: UnitRecord[] = [
     "nama_unit": "KL Lazismu Mantrijeron",
     "nama_unit_pendek": "Lazismu Mantrijeron",
     "pemerhati": "",
-    "parent_unit_id":   200,
+    "parent_unit_id":   17,
     "tipe": "UNIT"
   },
   {
@@ -1293,7 +1285,7 @@ export const ALL_UNITS: UnitRecord[] = [
     "nama_unit": "KL Lazismu Mergangsan",
     "nama_unit_pendek": "Lazismu Mergangsan",
     "pemerhati": "",
-    "parent_unit_id":   200,
+    "parent_unit_id":   17,
     "tipe": "UNIT"
   },
   {
@@ -1301,7 +1293,7 @@ export const ALL_UNITS: UnitRecord[] = [
     "nama_unit": "KL Lazismu Ngampilan",
     "nama_unit_pendek": "Lazismu Ngampilan",
     "pemerhati": "",
-    "parent_unit_id":   200,
+    "parent_unit_id":   17,
     "tipe": "UNIT"
   },
   {
@@ -1309,7 +1301,7 @@ export const ALL_UNITS: UnitRecord[] = [
     "nama_unit": "KL Lazismu Pakualaman",
     "nama_unit_pendek": "Lazismu Pakualaman",
     "pemerhati": "",
-    "parent_unit_id":   200,
+    "parent_unit_id":   17,
     "tipe": "UNIT"
   },
   {
@@ -1317,7 +1309,7 @@ export const ALL_UNITS: UnitRecord[] = [
     "nama_unit": "KL Lazismu Tegalrejo",
     "nama_unit_pendek": "Lazismu Tegalrejo",
     "pemerhati": "",
-    "parent_unit_id":   200,
+    "parent_unit_id":   17,
     "tipe": "UNIT"
   },
   {
@@ -1325,7 +1317,7 @@ export const ALL_UNITS: UnitRecord[] = [
     "nama_unit": "KL Lazismu Umbulharjo",
     "nama_unit_pendek": "Lazismu Umbulharjo",
     "pemerhati": "",
-    "parent_unit_id":   200,
+    "parent_unit_id":   17,
     "tipe": "UNIT"
   },
   {
@@ -1333,7 +1325,7 @@ export const ALL_UNITS: UnitRecord[] = [
     "nama_unit": "KL Lazismu Wirobrajan",
     "nama_unit_pendek": "Lazismu Wirobrajan",
     "pemerhati": "",
-    "parent_unit_id":   200,
+    "parent_unit_id":   17,
     "tipe": "UNIT"
   }
 ];
