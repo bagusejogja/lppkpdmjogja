@@ -13,7 +13,7 @@ export const ALL_UNITS: UnitRecord[] = [
     "nama_unit": "Badan Pengurus Lazismu PDM Kota Yogyakarta",
     "nama_unit_pendek": "LAZISMU-PDM",
     "pemerhati": "Badan Pengurus Lazismu PDM",
-    "parent_unit_id": 27,
+    "parent_unit_id": 17,
     "tipe": "GROUP"
   },
   {
@@ -150,7 +150,7 @@ export const ALL_UNITS: UnitRecord[] = [
     "nama_unit_pendek": "LazisMu",
     "pemerhati": "",
     "parent_unit_id": 27,
-    "tipe": "UNIT"
+    "tipe": "GROUP"
   },
   {
     "id": 18,

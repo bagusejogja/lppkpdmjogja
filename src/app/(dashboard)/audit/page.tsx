@@ -29,6 +29,7 @@ import {
   ShieldCheck,
   ChevronRight,
   ChevronDown,
+  ChevronUp,
   ExternalLink,
   UserCheck,
   MessageSquare,
@@ -38,7 +39,10 @@ import {
   CheckCircle as CheckIcon,
   Circle,
   ArrowRight,
-  Layers
+  Layers,
+  BookOpen,
+  ClipboardList,
+  CheckSquare
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -69,6 +73,10 @@ interface AuditDocItem {
   due_date: string;
   description: string;
   unit_name: string;
+  created_at: string; // Tahap 1: Waktu permintaan dibuat
+  opened_by_auditee_at?: string; // Tahap 2: Waktu dibuka auditee
+  auditor_review_at?: string; // Tahap 4: Waktu auditor mulai reviu
+  decided_at?: string; // Tahap 5: Waktu keputusan akhir
   attachment?: {
     file_key: string;
     original_name: string;
@@ -108,7 +116,10 @@ const INITIAL_AUDIT_ITEMS: AuditDocItem[] = [
     category: 'KEUANGAN',
     status: 'DISUBMIT',
     due_date: '30 Apr 2026',
-    description: 'Mohon takmir melampirkan salinan mutasi rekening koran bank BSI atas nama masjid serta Berita Acara Kas Opname fisik per 31 Maret 2026.',
+    created_at: '01 Apr 2026, 08:30 WIB',
+    opened_by_auditee_at: '02 Apr 2026, 09:15 WIB',
+    auditor_review_at: '07 Apr 2026, 14:00 WIB',
+    description: 'Mohon bendahara unit melampirkan salinan mutasi rekening koran bank BSI atas nama entitas resmi serta Berita Acara Kas Opname fisik brankas per 31 Maret 2026.',
     unit_name: 'Takmir Masjid Gedhe Kauman',
     attachment: {
       file_key: 'MSJ-KAUMAN/2026/Audit_Docs/req-01/Rekening_Koran_Q1_2026.pdf',
@@ -137,7 +148,7 @@ const INITIAL_AUDIT_ITEMS: AuditDocItem[] = [
         senderName: 'Ahmad Zaki, S.E.',
         senderRole: 'Bendahara Takmir Kauman',
         senderAvatar: 'AZ',
-        message: 'Sudah kami lampirkan dokumen versi 1.1 pada link di sebelah kiri. Rekonsiliasi kas opname fisik brankas juga sudah tertera.',
+        message: 'Sudah kami lampirkan dokumen versi 1.1 pada link di sebelah kanan. Rekonsiliasi kas opname fisik brankas juga sudah tertera.',
         timestamp: '07 Apr 2026, 14:22 WIB',
         isAuditor: false
       }
@@ -151,7 +162,11 @@ const INITIAL_AUDIT_ITEMS: AuditDocItem[] = [
     category: 'ASET',
     status: 'KOMPLIT',
     due_date: '20 Apr 2026',
-    description: 'Pemeriksaan kepatuhan hukum kepemilikan tanah wakaf dan surat ukur persyarikatan.',
+    created_at: '01 Apr 2026, 08:30 WIB',
+    opened_by_auditee_at: '01 Apr 2026, 11:00 WIB',
+    auditor_review_at: '02 Apr 2026, 15:30 WIB',
+    decided_at: '03 Apr 2026, 11:15 WIB',
+    description: 'Pemeriksaan kepatuhan hukum kepemilikan tanah wakaf dan surat ukur atas nama Persyarikatan Muhammadiyah.',
     unit_name: 'Takmir Masjid Gedhe Kauman',
     attachment: {
       file_key: 'MSJ-KAUMAN/2026/Audit_Docs/req-02/Sertifikat_Wakaf_Kauman.pdf',
@@ -171,7 +186,7 @@ const INITIAL_AUDIT_ITEMS: AuditDocItem[] = [
         senderName: 'Drs. H. M. Husnan, M.Ag.',
         senderRole: 'Auditor Tim LPPK PDM',
         senderAvatar: 'HU',
-        message: 'Alhamdulillah akta wakaf lengkap dan atas nama Persyarikatan Muhammadiyah. Telah diverifikasi.',
+        message: 'Alhamdulillah akta wakaf lengkap dan sah atas nama Persyarikatan Muhammadiyah. Telah disetujui.',
         timestamp: '03 Apr 2026, 11:10 WIB',
         isAuditor: true
       }
@@ -185,7 +200,11 @@ const INITIAL_AUDIT_ITEMS: AuditDocItem[] = [
     category: 'SPJ',
     status: 'REVISI',
     due_date: '15 Apr 2026',
-    description: 'Pemeriksaan kepatuhan juknis BOS reguler, kwitansi belanja barang modal > Rp 5 juta, dan potongan pajak PPh 21/23.',
+    created_at: '01 Apr 2026, 08:30 WIB',
+    opened_by_auditee_at: '03 Apr 2026, 13:20 WIB',
+    auditor_review_at: '09 Apr 2026, 14:10 WIB',
+    decided_at: '09 Apr 2026, 16:50 WIB',
+    description: 'Pemeriksaan kepatuhan juknis BOS reguler, kwitansi belanja barang modal > Rp 5 juta, dan bukti potongan pajak PPh 21/23.',
     unit_name: 'SMA Muhammadiyah 1 Yogyakarta',
     attachment: {
       file_key: 'SMA-MUHI/2026/Audit_Docs/req-03/SPJ_BOS_TW1_Draft.pdf',
@@ -219,7 +238,11 @@ const INITIAL_AUDIT_ITEMS: AuditDocItem[] = [
     category: 'ORGANISASI',
     status: 'KOMPLIT',
     due_date: '10 Mei 2026',
-    description: 'Pemeriksaan keabsahan susunan dewan pengurus dan masa khidmat periode 2022-2027.',
+    created_at: '01 Apr 2026, 08:30 WIB',
+    opened_by_auditee_at: '01 Apr 2026, 08:35 WIB',
+    auditor_review_at: '01 Apr 2026, 09:40 WIB',
+    decided_at: '01 Apr 2026, 10:05 WIB',
+    description: 'Pemeriksaan keabsahan susunan pengurus dan masa khidmat periode 2022-2027.',
     unit_name: 'Takmir Masjid Gedhe Kauman',
     attachment: {
       file_key: 'MSJ-KAUMAN/2026/Audit_Docs/req-04/SK_Pengesahan_PDM.pdf',
@@ -253,7 +276,10 @@ const INITIAL_AUDIT_ITEMS: AuditDocItem[] = [
     category: 'KEPATUHAN',
     status: 'DISUBMIT',
     due_date: '25 Mei 2026',
-    description: 'Pemeriksaan rasio beban operasional amil terhadap perolehan ZISKA bruto (maksimal 12,5% sesuai UU & Syariah).',
+    created_at: '05 Apr 2026, 10:00 WIB',
+    opened_by_auditee_at: '06 Apr 2026, 08:15 WIB',
+    auditor_review_at: '11 Apr 2026, 13:00 WIB',
+    description: 'Pemeriksaan rasio beban operasional amil terhadap perolehan ZISKA bruto (maksimal 12,5% sesuai UU Zakat & Syariah).',
     unit_name: 'KL Lazismu Kemantren Gondomanan',
     attachment: {
       file_key: 'LAZIS-GONDOMANAN/2026/Audit_Docs/req-05/Laporan_Ziska_Q1.pdf',
@@ -286,6 +312,9 @@ export default function AuditDualPortalPage() {
   const [selectedItemId, setSelectedItemId] = useState<string>('req-01');
   const [activePortal, setActivePortal] = useState<'auditee' | 'auditor'>('auditor');
   const [expandedParents, setExpandedParents] = useState<Set<string>>(new Set(['pg-1', 'pg-2', 'pg-3', 'pg-4', 'pg-5']));
+
+  // Workspace Collapse State (Bisa Buka / Tutup Detail)
+  const [isWorkspaceCollapsed, setIsWorkspaceCollapsed] = useState(false);
 
   // Chat message input
   const [replyText, setReplyText] = useState('');
@@ -340,19 +369,40 @@ export default function AuditDualPortalPage() {
     toast.success('Pesan diskusi berhasil dikirim!', { icon: '💬' });
   };
 
-  // Simpan perubahan verifikasi auditor (Setujui / Revisi)
-  const handleSetStatus = (newStatus: RequestStatus) => {
+  // Action Auditor: Tandai Sedang Direviu LPPK (Tahap 4)
+  const handleStartReview = () => {
+    const nowWib = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) + ', ' + new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB';
     setAuditItems(auditItems.map(item => {
       if (item.id === currentItem.id) {
-        return { ...item, status: newStatus };
+        return {
+          ...item,
+          auditor_review_at: nowWib
+        };
+      }
+      return item;
+    }));
+    toast.success('Status dicatat: Berkas sedang diperiksa & diuji oleh Tim Auditor LPPK');
+  };
+
+  // Action Auditor: Ambil Keputusan Akhir (Tahap 5)
+  const handleSetDecision = (newStatus: RequestStatus) => {
+    const nowWib = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) + ', ' + new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB';
+    setAuditItems(auditItems.map(item => {
+      if (item.id === currentItem.id) {
+        return {
+          ...item,
+          status: newStatus,
+          decided_at: nowWib,
+          auditor_review_at: item.auditor_review_at || nowWib
+        };
       }
       return item;
     }));
 
-    toast.success(`Status berkas audit diubah menjadi "${newStatus}"!`);
+    toast.success(`Keputusan auditor disimpan: "${newStatus === 'KOMPLIT' ? 'Sah & Lengkap' : 'Perlu Revisi'}" pada ${nowWib}`);
   };
 
-  // Upload berkas baru oleh auditee
+  // Upload berkas baru oleh auditee (Memicu Tahap 3)
   const handleUploadSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!uploadFileName.trim()) {
@@ -392,19 +442,21 @@ export default function AuditDualPortalPage() {
     toast.success('Berkas audit berhasil diunggah ke penyimpanan Cloudflare R2 LPPK!', { icon: '✅' });
   };
 
-  // Hitung langkah stepper alur berkas
-  // 1: DIMINTA (PENDING)
-  // 2: DIUNGGAH (DISUBMIT)
-  // 3: DIREVIU (UNDER_REVIEW / PROSES)
-  // 4: SELESAI (KOMPLIT / REVISI)
-  const getWorkflowStep = (status: RequestStatus) => {
-    if (status === 'KOMPLIT') return { step: 4, label: 'Lengkap & Terverifikasi Sah', isSuccess: true, isRevision: false };
-    if (status === 'REVISI') return { step: 4, label: 'Perlu Revisi / Catatan Perbaikan', isSuccess: false, isRevision: true };
-    if (status === 'DISUBMIT') return { step: 2, label: 'Berkas Telah Diunggah Auditee', isSuccess: false, isRevision: false };
-    return { step: 1, label: 'Menunggu Pengunggahan Bukti', isSuccess: false, isRevision: false };
+  // Saat auditee memilih/membuka butir, catat waktu dibuka (Tahap 2)
+  const handleSelectItem = (item: AuditDocItem) => {
+    setSelectedItemId(item.id);
+    if (!item.opened_by_auditee_at && activePortal === 'auditee') {
+      const nowWib = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) + ', ' + new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB';
+      setAuditItems(prev => prev.map(x => x.id === item.id ? { ...x, opened_by_auditee_at: nowWib } : x));
+    }
   };
 
-  const workflowInfo = getWorkflowStep(currentItem.status);
+  // Evaluasi Status Tahapan Alur Alami Berkas
+  const isStep1Done = Boolean(currentItem.created_at);
+  const isStep2Done = Boolean(currentItem.opened_by_auditee_at || currentItem.attachment);
+  const isStep3Done = Boolean(currentItem.attachment);
+  const isStep4Done = Boolean(currentItem.auditor_review_at || currentItem.status === 'KOMPLIT' || currentItem.status === 'REVISI');
+  const isStep5Done = currentItem.status === 'KOMPLIT' || currentItem.status === 'REVISI';
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
@@ -418,7 +470,7 @@ export default function AuditDualPortalPage() {
             <div>
               <h1 className="text-2xl font-black text-slate-900 tracking-tight">Audit Dokumen & Pemeriksaan Terpadu (Inflo-Model)</h1>
               <p className="text-xs text-slate-500 mt-0.5">
-                Struktur pohon ber-kelompok, bilah alur status, integrasi bukti dokumen Cloudflare R2, dan ruang chat interaktif.
+                Ruang periksa di atas dengan rincian instruksi, chat komunikasi, berkas bukti Cloudflare R2, dan pohon audit berjenjang di bawah.
               </p>
             </div>
           </div>
@@ -448,16 +500,409 @@ export default function AuditDualPortalPage() {
       </div>
 
       {/* ========================================================================= */}
-      {/* 1. NAVIGASI POHON AUDIT DIGROUP PER PERMINTAAN INDUK (PERSIS ALA /templates) */}
+      {/* 1. BILAH ALUR PROGRESS WORKFLOW STEPPER BAR (5 TAHAP ALUR ALAMI AUDIT)   */}
+      {/*    Tersisi otomatis sesuai aksi: dibuat -> dibuka -> diunggah -> direviu -> keputusan */}
+      {/* ========================================================================= */}
+      <Card className="rounded-2xl border-slate-200/90 shadow-2xs overflow-hidden bg-gradient-to-r from-emerald-50/60 via-white to-slate-50/80">
+        <CardContent className="p-4 space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] uppercase font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">
+                Alur Pemeriksaan Dokumen (Otomatis per Aksi)
+              </span>
+              <span className="text-xs font-bold text-slate-800">
+                Butir Aktif: <span className="text-emerald-900 font-extrabold">{currentItem.title}</span>
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <StatusBadge status={currentItem.status} />
+              <button
+                type="button"
+                onClick={() => setIsWorkspaceCollapsed(!isWorkspaceCollapsed)}
+                className="text-xs font-bold text-[#055838] hover:text-[#04432b] bg-white border border-emerald-200 hover:bg-emerald-50 px-2.5 py-1 rounded-lg flex items-center gap-1 transition-all"
+              >
+                {isWorkspaceCollapsed ? (
+                  <>
+                    <ChevronDown className="w-3.5 h-3.5" />
+                    <span>Buka Ruang Pemeriksaan</span>
+                  </>
+                ) : (
+                  <>
+                    <ChevronUp className="w-3.5 h-3.5" />
+                    <span>Tutup / Sembunyikan</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* Stepper Bar 5 Tahapan */}
+          <div className="grid grid-cols-1 sm:grid-cols-5 gap-2 pt-1 text-xs">
+            {/* Tahap 1: Dibuat */}
+            <div className={`p-2 rounded-xl border flex items-center gap-2 transition-all ${
+              isStep1Done ? 'bg-emerald-50/80 border-emerald-300 text-emerald-950' : 'bg-slate-50 border-slate-200 text-slate-400'
+            }`}>
+              <span className={`w-5 h-5 rounded-full flex items-center justify-center font-bold text-[10px] shrink-0 ${
+                isStep1Done ? 'bg-[#055838] text-white' : 'bg-slate-200 text-slate-500'
+              }`}>
+                ✓
+              </span>
+              <div className="min-w-0">
+                <div className="font-bold text-[11px] leading-tight">1. Permintaan Dibuat</div>
+                <div className="text-[9px] text-slate-500 truncate">{currentItem.created_at}</div>
+              </div>
+            </div>
+
+            {/* Tahap 2: Dibuka Auditee */}
+            <div className={`p-2 rounded-xl border flex items-center gap-2 transition-all ${
+              isStep2Done ? 'bg-emerald-50/80 border-emerald-300 text-emerald-950' : 'bg-slate-50 border-slate-200 text-slate-400'
+            }`}>
+              <span className={`w-5 h-5 rounded-full flex items-center justify-center font-bold text-[10px] shrink-0 ${
+                isStep2Done ? 'bg-[#055838] text-white' : 'bg-slate-200 text-slate-500'
+              }`}>
+                {isStep2Done ? '✓' : '2'}
+              </span>
+              <div className="min-w-0">
+                <div className="font-bold text-[11px] leading-tight">2. Dibuka Auditee</div>
+                <div className="text-[9px] text-slate-500 truncate">
+                  {currentItem.opened_by_auditee_at ? currentItem.opened_by_auditee_at : 'Menunggu dibuka'}
+                </div>
+              </div>
+            </div>
+
+            {/* Tahap 3: Berkas Diunggah */}
+            <div className={`p-2 rounded-xl border flex items-center gap-2 transition-all ${
+              isStep3Done ? 'bg-emerald-50/80 border-emerald-300 text-emerald-950' : 'bg-slate-50 border-slate-200 text-slate-400'
+            }`}>
+              <span className={`w-5 h-5 rounded-full flex items-center justify-center font-bold text-[10px] shrink-0 ${
+                isStep3Done ? 'bg-[#055838] text-white' : 'bg-slate-200 text-slate-500'
+              }`}>
+                {isStep3Done ? '✓' : '3'}
+              </span>
+              <div className="min-w-0">
+                <div className="font-bold text-[11px] leading-tight">3. Berkas Diunggah</div>
+                <div className="text-[9px] text-slate-500 truncate">
+                  {currentItem.attachment ? currentItem.attachment.created_at : 'Belum unggah'}
+                </div>
+              </div>
+            </div>
+
+            {/* Tahap 4: Reviu Verifikator */}
+            <div className={`p-2 rounded-xl border flex items-center gap-2 transition-all ${
+              isStep4Done ? 'bg-emerald-50/80 border-emerald-300 text-emerald-950' : 'bg-slate-50 border-slate-200 text-slate-400'
+            }`}>
+              <span className={`w-5 h-5 rounded-full flex items-center justify-center font-bold text-[10px] shrink-0 ${
+                isStep4Done ? 'bg-[#055838] text-white' : 'bg-slate-200 text-slate-500'
+              }`}>
+                {isStep4Done ? '✓' : '4'}
+              </span>
+              <div className="min-w-0">
+                <div className="font-bold text-[11px] leading-tight">4. Reviu Verifikator</div>
+                <div className="text-[9px] text-slate-500 truncate">
+                  {currentItem.auditor_review_at ? currentItem.auditor_review_at : 'Menunggu reviu'}
+                </div>
+              </div>
+            </div>
+
+            {/* Tahap 5: Keputusan Akhir */}
+            <div className={`p-2 rounded-xl border flex items-center gap-2 transition-all ${
+              isStep5Done 
+                ? (currentItem.status === 'KOMPLIT' ? 'bg-emerald-100 border-emerald-400 text-emerald-950' : 'bg-rose-50 border-rose-300 text-rose-950')
+                : 'bg-slate-50 border-slate-200 text-slate-400'
+            }`}>
+              <span className={`w-5 h-5 rounded-full flex items-center justify-center font-bold text-[10px] shrink-0 ${
+                isStep5Done 
+                  ? (currentItem.status === 'KOMPLIT' ? 'bg-emerald-700 text-white' : 'bg-rose-600 text-white')
+                  : 'bg-slate-200 text-slate-500'
+              }`}>
+                {isStep5Done ? '✓' : '5'}
+              </span>
+              <div className="min-w-0">
+                <div className="font-bold text-[11px] leading-tight">
+                  {isStep5Done ? (currentItem.status === 'KOMPLIT' ? '5. Lengkap & Sah' : '5. Perlu Revisi') : '5. Status Akhir'}
+                </div>
+                <div className="text-[9px] text-slate-500 truncate">
+                  {currentItem.decided_at ? currentItem.decided_at : 'Belum diputuskan'}
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* ========================================================================= */}
+      {/* 2. RUANG KERJA PEMERIKSAAN DOKUMEN (DI ATAS) - BISA DI-COLLAPSE/DIBUKA   */}
+      {/*    Format 3 Kolom:                                                        */}
+      {/*    1. Kiri: Instruksi & Panduan Pemeriksaan                               */}
+      {/*    2. Tengah: Diskusi & Catatan Verifikator (Chat)                        */}
+      {/*    3. Kanan: Berkas Bukti Terlampir Cloudflare R2 & Tombol Aksi           */}
+      {/* ========================================================================= */}
+      {!isWorkspaceCollapsed && (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch transition-all duration-300">
+          
+          {/* KOLOM 1 (KIRI - 4/12): INSTRUKSI & PANDUAN PEMERIKSAAN (FORMAT CANTIK SEPERTI CHAT CARD) */}
+          <div className="lg:col-span-4 flex flex-col">
+            <Card className="rounded-2xl border-slate-200 shadow-xs flex-1 flex flex-col overflow-hidden bg-white">
+              <CardHeader className="bg-slate-50/80 border-b border-slate-100 p-3.5 flex flex-row items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <BookOpen className="w-4 h-4 text-[#055838]" />
+                  <div>
+                    <h3 className="font-bold text-slate-900 text-xs">Instruksi Pemeriksaan</h3>
+                    <span className="text-[10px] text-slate-500">Panduan resmi verifikator LPPK</span>
+                  </div>
+                </div>
+                <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full uppercase">
+                  {currentItem.category}
+                </span>
+              </CardHeader>
+
+              <CardContent className="p-4 space-y-3.5 flex-1 text-xs">
+                <div>
+                  <span className="text-[10px] font-bold text-slate-400 block uppercase tracking-wider mb-1">
+                    Induk Permintaan:
+                  </span>
+                  <div className="font-bold text-slate-900 text-sm leading-snug">
+                    {currentItem.parentTitle}
+                  </div>
+                </div>
+
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-slate-700 leading-relaxed space-y-1.5">
+                  <div className="font-bold text-slate-900 flex items-center gap-1.5 text-xs">
+                    <ClipboardList className="w-3.5 h-3.5 text-emerald-700" />
+                    <span>Instruksi Khusus Butir Ini:</span>
+                  </div>
+                  <p className="text-slate-600 text-xs leading-relaxed">
+                    {currentItem.description}
+                  </p>
+                </div>
+
+                <div className="space-y-2 pt-1 border-t border-slate-100 text-[11px]">
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-500">Sasaran Entitas:</span>
+                    <span className="font-bold text-slate-800">{currentItem.unit_name}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-500">Batas Waktu Pengumpulan:</span>
+                    <span className="font-bold text-amber-800 font-mono bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                      {currentItem.due_date}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-500">Format yang Diizinkan:</span>
+                    <span className="font-semibold text-slate-700">PDF Resmi (Maks 25MB)</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-500">Tanggal Diterbitkan:</span>
+                    <span className="font-mono text-slate-600">{currentItem.created_at}</span>
+                  </div>
+                </div>
+
+                {/* Tombol Reviu oleh Auditor jika belum reviu */}
+                {activePortal === 'auditor' && !currentItem.auditor_review_at && currentItem.attachment && (
+                  <div className="pt-2">
+                    <Button
+                      size="sm"
+                      onClick={handleStartReview}
+                      className="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 rounded-xl py-2"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                      Mulai Pengujian & Reviu Dokumen
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* KOLOM 2 (TENGAH - 4/12): DISKUSI & CATATAN VERIFIKATOR (CHAT THREAD) */}
+          <div className="lg:col-span-4 flex flex-col">
+            <Card className="rounded-2xl border-slate-200 shadow-xs flex-1 flex flex-col h-[460px] overflow-hidden bg-white">
+              <CardHeader className="bg-slate-50/80 border-b border-slate-100 p-3.5 flex flex-row items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <MessageSquare className="w-4 h-4 text-[#055838]" />
+                  <div>
+                    <h3 className="font-bold text-slate-900 text-xs">Diskusi & Catatan Verifikator</h3>
+                    <span className="text-[10px] text-slate-500">Thread butir #{currentItem.id}</span>
+                  </div>
+                </div>
+                <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-bold">
+                  {currentItem.messages.length} Pesan
+                </span>
+              </CardHeader>
+
+              {/* List Pesan Chat */}
+              <div className="flex-1 p-3 overflow-y-auto space-y-2.5 text-xs bg-slate-50/30">
+                {currentItem.messages.length === 0 ? (
+                  <div className="text-center py-12 text-slate-400">
+                    Belum ada diskusi pada dokumen ini.
+                  </div>
+                ) : (
+                  currentItem.messages.map((msg) => (
+                    <div 
+                      key={msg.id}
+                      className={`p-2.5 rounded-xl border leading-relaxed space-y-1 ${
+                        msg.isAuditor 
+                          ? 'bg-amber-50/80 border-amber-200 ml-3' 
+                          : 'bg-white border-slate-200 mr-3'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between text-[10px]">
+                        <div className="flex items-center gap-1.5 font-bold">
+                          <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold ${
+                            msg.isAuditor ? 'bg-amber-600 text-white' : 'bg-emerald-700 text-white'
+                          }`}>
+                            {msg.senderAvatar}
+                          </span>
+                          <span className="text-slate-900 truncate max-w-[140px]">{msg.senderName}</span>
+                        </div>
+                        <span className="text-slate-400 font-mono text-[9px]">{msg.timestamp}</span>
+                      </div>
+
+                      <p className="text-slate-700 text-xs pl-5">
+                        {msg.message}
+                      </p>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Form Input Balasan Chat */}
+              <div className="p-2.5 border-t border-slate-100 bg-white space-y-1.5">
+                <div className="flex items-center justify-between text-[9px] text-slate-400">
+                  <span>Kirim sebagai: <strong>{activePortal === 'auditor' ? 'Auditor LPPK' : 'Bendahara Unit'}</strong></span>
+                  <span className="font-mono">WIB</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Input
+                    value={replyText}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setReplyText(e.target.value)}
+                    onKeyDown={(e: React.KeyboardEvent) => { if (e.key === 'Enter') handleSendMessage(); }}
+                    placeholder="Tulis catatan audit / balasan..."
+                    className="text-xs rounded-xl"
+                  />
+                  <Button
+                    onClick={handleSendMessage}
+                    className="bg-[#055838] hover:bg-[#04432b] text-white px-2.5 py-2 rounded-xl shrink-0"
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          </div>
+
+          {/* KOLOM 3 (KANAN - 4/12): BERKAS BUKTI TERLAMPIR CLOUDFLARE R2 & AKSI KEPUTUSAN */}
+          <div className="lg:col-span-4 flex flex-col">
+            <Card className="rounded-2xl border-slate-200 shadow-xs flex-1 flex flex-col justify-between overflow-hidden bg-white">
+              <CardHeader className="bg-slate-50/80 border-b border-slate-100 p-3.5 flex flex-row items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-[#055838]" />
+                  <div>
+                    <h3 className="font-bold text-slate-900 text-xs">Berkas Bukti Terlampir</h3>
+                    <span className="text-[10px] text-slate-500">Penyimpanan Cloudflare R2</span>
+                  </div>
+                </div>
+                <StatusBadge status={currentItem.status} />
+              </CardHeader>
+
+              <CardContent className="p-4 space-y-3 text-xs flex-1">
+                {currentItem.attachment ? (
+                  <div className="p-3 bg-emerald-50/50 rounded-xl border border-emerald-200 space-y-2.5">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="font-bold text-slate-900 text-xs truncate leading-snug">
+                          {currentItem.attachment.display_name}
+                        </div>
+                        <div className="text-[10px] text-slate-500 font-mono mt-0.5 truncate">
+                          {currentItem.attachment.original_name} • {(currentItem.attachment.file_size / (1024 * 1024)).toFixed(2)} MB
+                        </div>
+                      </div>
+
+                      <span className="text-[9px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.5 rounded font-mono shrink-0">
+                        {currentItem.attachment.version}
+                      </span>
+                    </div>
+
+                    <div className="text-[10px] text-slate-500 border-t border-emerald-100 pt-2 space-y-0.5">
+                      <div>Pengunggah: <strong className="text-slate-800">{currentItem.attachment.uploaded_by_name}</strong></div>
+                      <div>Waktu Unggah: <strong className="text-slate-700">{currentItem.attachment.created_at}</strong></div>
+                    </div>
+
+                    {currentItem.attachment.notes && (
+                      <div className="text-[10px] bg-white p-2 rounded-lg border border-emerald-100 text-slate-600">
+                        <strong>Catatan:</strong> {currentItem.attachment.notes}
+                      </div>
+                    )}
+
+                    {/* Tombol Unduh Bebas Blokir IndiHome */}
+                    <a
+                      href={getSafeDownloadUrl(currentItem.attachment.file_key, currentItem.attachment.display_name)}
+                      className="w-full inline-flex items-center justify-center gap-1.5 text-xs bg-[#055838] hover:bg-[#04432b] text-white py-2 rounded-xl font-bold transition-all shadow-xs"
+                      title="Unduh langsung PDF tanpa terblokir DNS Nawala / IndiHome"
+                    >
+                      <Download className="w-4 h-4" />
+                      <span>Unduh Dokumen PDF Aman</span>
+                    </a>
+                  </div>
+                ) : (
+                  <div className="p-6 bg-slate-50 border border-dashed border-slate-300 rounded-xl text-center space-y-2">
+                    <FileText className="w-8 h-8 text-slate-300 mx-auto" />
+                    <div className="text-slate-500 font-medium text-xs">Belum ada berkas PDF yang dilampirkan oleh auditee.</div>
+                  </div>
+                )}
+              </CardContent>
+
+              {/* Footer Tindakan Auditor atau Auditee */}
+              <div className="p-3.5 border-t border-slate-100 bg-slate-50/50">
+                {activePortal === 'auditee' ? (
+                  <Button 
+                    onClick={() => setUploadModalOpen(true)}
+                    className="w-full bg-[#055838] hover:bg-[#04432b] text-white font-bold text-xs flex items-center justify-center gap-1.5 py-2 rounded-xl shadow-xs"
+                  >
+                    <Upload className="w-4 h-4" />
+                    {currentItem.attachment ? 'Unggah Berkas Versi Revisi' : 'Unggah Dokumen Bukti'}
+                  </Button>
+                ) : (
+                  <div className="space-y-1.5">
+                    <span className="text-[10px] font-bold text-slate-600 uppercase block">Keputusan Verifikator:</span>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      <Button
+                        size="sm"
+                        onClick={() => handleSetDecision('KOMPLIT')}
+                        className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-[11px] flex items-center justify-center gap-1 rounded-xl py-1.5"
+                      >
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        Setujui Sah
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => handleSetDecision('REVISI')}
+                        className="bg-rose-600 hover:bg-rose-700 text-white font-bold text-[11px] flex items-center justify-center gap-1 rounded-xl py-1.5"
+                      >
+                        <AlertTriangle className="w-3.5 h-3.5" />
+                        Minta Revisi
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </Card>
+          </div>
+
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* 3. POHON AUDIT DIGROUP PER PERMINTAAN INDUK (POSISI DI BAWAH)             */}
       {/* ========================================================================= */}
       <Card className="rounded-2xl border-slate-200/90 shadow-2xs overflow-hidden">
         <CardHeader className="bg-slate-50/80 border-b border-slate-200/80 p-3.5 flex flex-row items-center justify-between">
           <div className="flex items-center gap-2">
             <FolderCheck className="w-4 h-4 text-[#055838]" />
-            <span className="text-xs font-bold text-slate-900">Kelompok Permintaan Induk & Butir Dokumen Pemeriksaan</span>
+            <span className="text-xs font-bold text-slate-900">Katalog Permintaan Induk & Butir Dokumen Pemeriksaan</span>
           </div>
           <span className="text-[11px] text-slate-500 font-medium">
-            Pilih butir dokumen di bawah untuk meninjau berkas & chat
+            Klik butir dokumen untuk memuatnya ke Ruang Kerja Pemeriksaan di atas
           </span>
         </CardHeader>
 
@@ -509,19 +954,19 @@ export default function AuditDualPortalPage() {
                         return (
                           <div 
                             key={child.id}
-                            onClick={() => setSelectedItemId(child.id)}
-                            className={`p-2 rounded-xl border transition-all cursor-pointer flex items-center justify-between text-xs ${
+                            onClick={() => handleSelectItem(child)}
+                            className={`p-2.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between text-xs ${
                               isSelected
-                                ? 'bg-emerald-50/80 border-[#055838] ring-1 ring-[#055838]/20 shadow-xs'
+                                ? 'bg-emerald-50/90 border-[#055838] ring-2 ring-[#055838]/20 shadow-xs'
                                 : 'bg-slate-50/40 border-slate-200/80 hover:bg-slate-50'
                             }`}
                           >
-                            <div className="flex items-center gap-2 min-w-0">
+                            <div className="flex items-center gap-2.5 min-w-0">
                               <span className="text-slate-400 font-mono text-[11px] shrink-0">
                                 {pgIdx + 1}.{cIdx + 1}
                               </span>
                               <div className="min-w-0">
-                                <div className="font-semibold text-slate-800 truncate">{child.title}</div>
+                                <div className="font-bold text-slate-800 truncate">{child.title}</div>
                                 <div className="text-[10px] text-slate-400 flex items-center gap-1.5 mt-0.5">
                                   <Building2 className="w-3 h-3 text-slate-400" />
                                   <span>{child.unit_name}</span>
@@ -533,7 +978,11 @@ export default function AuditDualPortalPage() {
 
                             <div className="flex items-center gap-2 shrink-0 ml-2">
                               <StatusBadge status={child.status} />
-                              <ChevronRight className={`w-3.5 h-3.5 ${isSelected ? 'text-[#055838]' : 'text-slate-300'}`} />
+                              <span className={`text-[11px] font-bold px-2 py-0.5 rounded-lg ${
+                                isSelected ? 'bg-[#055838] text-white' : 'bg-slate-100 text-slate-600'
+                              }`}>
+                                {isSelected ? 'Sedang Dipilih ↑' : 'Pilih'}
+                              </span>
                             </div>
                           </div>
                         );
@@ -546,308 +995,6 @@ export default function AuditDualPortalPage() {
           })}
         </CardContent>
       </Card>
-
-      {/* ========================================================================= */}
-      {/* 2. BILAH ALUR PROGRESS WORKFLOW STEPPER BAR (POSISI BERKAS SAAT INI) */}
-      {/* ========================================================================= */}
-      <Card className="rounded-2xl border-slate-200/90 shadow-2xs overflow-hidden bg-gradient-to-r from-emerald-50/50 via-white to-slate-50/60">
-        <CardContent className="p-4 space-y-3">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] uppercase font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">
-                Alur Pemeriksaan Dokumen
-              </span>
-              <span className="text-xs font-bold text-slate-800">
-                Posisi: <span className="text-emerald-900">{workflowInfo.label}</span>
-              </span>
-            </div>
-            <div className="text-[11px] text-slate-500 font-mono">
-              Terakhir Diperbarui: <strong>{currentItem.attachment ? currentItem.attachment.updated_at : '13 Okt 2026, 14:30 WIB'}</strong>
-            </div>
-          </div>
-
-          {/* Stepper Steps Bar */}
-          <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 pt-1">
-            {/* Step 1 */}
-            <div className={`p-2.5 rounded-xl border flex items-center gap-2.5 ${
-              workflowInfo.step >= 1 ? 'bg-emerald-50 border-emerald-300 text-emerald-900' : 'bg-slate-50 border-slate-200 text-slate-400'
-            }`}>
-              <span className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ${
-                workflowInfo.step >= 1 ? 'bg-[#055838] text-white' : 'bg-slate-200 text-slate-500'
-              }`}>
-                ✓
-              </span>
-              <div className="min-w-0">
-                <div className="font-bold text-[11px]">1. Permintaan Dibuat</div>
-                <div className="text-[10px] text-slate-500">Instrumen LPPK</div>
-              </div>
-            </div>
-
-            {/* Step 2 */}
-            <div className={`p-2.5 rounded-xl border flex items-center gap-2.5 ${
-              workflowInfo.step >= 2 ? 'bg-emerald-50 border-emerald-300 text-emerald-900' : 'bg-slate-50 border-slate-200 text-slate-400'
-            }`}>
-              <span className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ${
-                workflowInfo.step >= 2 ? 'bg-[#055838] text-white' : 'bg-slate-200 text-slate-500'
-              }`}>
-                {workflowInfo.step >= 2 ? '✓' : '2'}
-              </span>
-              <div className="min-w-0">
-                <div className="font-bold text-[11px]">2. Berkas Diunggah</div>
-                <div className="text-[10px] text-slate-500">Oleh Auditee ke R2</div>
-              </div>
-            </div>
-
-            {/* Step 3 */}
-            <div className={`p-2.5 rounded-xl border flex items-center gap-2.5 ${
-              workflowInfo.step >= 3 || workflowInfo.step === 4 ? 'bg-emerald-50 border-emerald-300 text-emerald-900' : 'bg-slate-50 border-slate-200 text-slate-400'
-            }`}>
-              <span className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ${
-                workflowInfo.step >= 3 || workflowInfo.step === 4 ? 'bg-[#055838] text-white' : 'bg-slate-200 text-slate-500'
-              }`}>
-                {workflowInfo.step >= 3 || workflowInfo.step === 4 ? '✓' : '3'}
-              </span>
-              <div className="min-w-0">
-                <div className="font-bold text-[11px]">3. Reviu Verifikator</div>
-                <div className="text-[10px] text-slate-500">Tim Audit LPPK</div>
-              </div>
-            </div>
-
-            {/* Step 4 */}
-            <div className={`p-2.5 rounded-xl border flex items-center gap-2.5 ${
-              workflowInfo.step === 4
-                ? (workflowInfo.isSuccess ? 'bg-emerald-100 border-emerald-400 text-emerald-950 font-bold' : 'bg-rose-50 border-rose-300 text-rose-900 font-bold')
-                : 'bg-slate-50 border-slate-200 text-slate-400'
-            }`}>
-              <span className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ${
-                workflowInfo.step === 4
-                  ? (workflowInfo.isSuccess ? 'bg-emerald-700 text-white' : 'bg-rose-600 text-white')
-                  : 'bg-slate-200 text-slate-500'
-              }`}>
-                4
-              </span>
-              <div className="min-w-0">
-                <div className="font-bold text-[11px]">
-                  {workflowInfo.step === 4 ? (workflowInfo.isSuccess ? '4. Komplit & Sah' : '4. Perlu Revisi') : '4. Status Akhir'}
-                </div>
-                <div className="text-[10px] text-slate-500">Pemberian Nilai</div>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* ========================================================================= */}
-      {/* 3. DUAL-SPLIT LAYOUT: FORMULIR DOKUMEN & PREVIEW (KIRI) | CHAT REALTIME (KANAN) */}
-      {/* ========================================================================= */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        
-        {/* KOLOM KIRI (7/12): DETAIL DOKUMEN, METADATA & AKSI AUDITOR/AUDITEE */}
-        <div className="lg:col-span-7 space-y-4">
-          <Card className="rounded-2xl border-slate-200 shadow-sm overflow-hidden">
-            <CardHeader className="bg-slate-50/70 border-b border-slate-100 pb-3 flex flex-row items-center justify-between">
-              <div>
-                <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full uppercase">
-                  {currentItem.parentTitle}
-                </span>
-                <CardTitle className="text-base font-bold text-slate-900 mt-1">
-                  {currentItem.title}
-                </CardTitle>
-                <CardDescription className="text-xs">
-                  Entitas Unit: <strong>{currentItem.unit_name}</strong> • Batas Waktu: <strong>{currentItem.due_date}</strong>
-                </CardDescription>
-              </div>
-              <StatusBadge status={currentItem.status} />
-            </CardHeader>
-
-            <CardContent className="p-5 space-y-4 text-xs">
-              {/* Instruksi Pemeriksaan LPPK */}
-              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-slate-700 leading-relaxed">
-                <span className="font-bold text-slate-900 block mb-0.5">Instruksi Pemeriksaan:</span>
-                {currentItem.description}
-              </div>
-
-              {/* Status Berkas Lampiran Cloudflare R2 */}
-              <div className="space-y-2">
-                <span className="font-bold text-slate-800 block">Berkas Bukti Terlampir:</span>
-
-                {currentItem.attachment ? (
-                  <div className="p-3.5 bg-emerald-50/50 rounded-2xl border border-emerald-200 space-y-3">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-start gap-2.5">
-                        <span className="p-2 bg-emerald-100 text-[#055838] rounded-xl font-bold mt-0.5">
-                          <FileText className="w-5 h-5" />
-                        </span>
-                        <div>
-                          <div className="font-bold text-slate-900 text-sm leading-snug">
-                            {currentItem.attachment.display_name}
-                          </div>
-                          <div className="text-[11px] text-slate-500 font-mono mt-0.5">
-                            {currentItem.attachment.original_name} • {(currentItem.attachment.file_size / (1024 * 1024)).toFixed(2)} MB • {currentItem.attachment.version}
-                          </div>
-                          <div className="text-[10px] text-emerald-800 font-medium mt-1">
-                            Diunggah oleh: <strong>{currentItem.attachment.uploaded_by_name}</strong> ({currentItem.attachment.uploaded_by_role})
-                          </div>
-                          <div className="text-[10px] text-slate-400 mt-0.5">
-                            Stempel Waktu: <strong>{currentItem.attachment.updated_at}</strong>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Tombol Unduh Aman Bebas Blokir IndiHome */}
-                      <a
-                        href={getSafeDownloadUrl(currentItem.attachment.file_key, currentItem.attachment.display_name)}
-                        className="inline-flex items-center gap-1.5 text-xs bg-[#055838] hover:bg-[#04432b] text-white px-3 py-1.5 rounded-xl font-bold transition-all shadow-xs shrink-0"
-                        title="Unduh langsung tanpa terblokir DNS Nawala / Internet Positif"
-                      >
-                        <Download className="w-4 h-4" />
-                        <span>Unduh PDF</span>
-                      </a>
-                    </div>
-
-                    {currentItem.attachment.notes && (
-                      <div className="text-[11px] bg-white p-2.5 rounded-xl border border-emerald-100 text-slate-600">
-                        <strong>Catatan Pengunggah:</strong> {currentItem.attachment.notes}
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="p-6 bg-slate-50 border border-dashed border-slate-300 rounded-2xl text-center space-y-2">
-                    <FileText className="w-8 h-8 text-slate-300 mx-auto" />
-                    <div className="text-slate-500 font-medium">Belum ada berkas PDF yang dilampirkan oleh auditee.</div>
-                  </div>
-                )}
-              </div>
-
-              {/* Aksi Berdasarkan Mode Portal */}
-              <div className="pt-3 border-t border-slate-100">
-                {activePortal === 'auditee' ? (
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-[11px] text-slate-500">
-                      Format diizinkan: <strong>PDF (Maks 25MB)</strong>. Disimpan aman di Cloudflare R2.
-                    </span>
-                    <Button 
-                      onClick={() => setUploadModalOpen(true)}
-                      className="bg-[#055838] hover:bg-[#04432b] text-white font-bold text-xs flex items-center gap-1.5"
-                    >
-                      <Upload className="w-4 h-4" />
-                      {currentItem.attachment ? 'Unggah Versi Revisi' : 'Unggah Dokumen Bukti'}
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    <span className="font-bold text-slate-800 block text-xs">Tindakan Keputusan Auditor LPPK:</span>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        size="sm"
-                        onClick={() => handleSetStatus('KOMPLIT')}
-                        className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs flex items-center gap-1.5"
-                      >
-                        <CheckCircle2 className="w-4 h-4" />
-                        Setujui & Tandai Komplit
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={() => handleSetStatus('REVISI')}
-                        className="bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center gap-1.5"
-                      >
-                        <AlertTriangle className="w-4 h-4" />
-                        Minta Perbaikan / Revisi
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleSetStatus('DISUBMIT')}
-                        className="text-xs border-slate-300 text-slate-700"
-                      >
-                        Sedang Direviu
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* KOLOM KANAN (5/12): CHAT THREAD REALTIME DISKUSI DOKUMEN */}
-        <div className="lg:col-span-5 space-y-4">
-          <Card className="rounded-2xl border-slate-200 shadow-sm flex flex-col h-[560px]">
-            <CardHeader className="bg-slate-50/80 border-b border-slate-100 p-3.5 flex flex-row items-center justify-between">
-              <div className="flex items-center gap-2">
-                <MessageSquare className="w-4 h-4 text-[#055838]" />
-                <div>
-                  <h3 className="font-bold text-slate-900 text-xs">Diskusi & Catatan Verifikator</h3>
-                  <span className="text-[10px] text-slate-500">Terkait berkas #{currentItem.id}</span>
-                </div>
-              </div>
-              <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-bold">
-                {currentItem.messages.length} Pesan
-              </span>
-            </CardHeader>
-
-            {/* List Pesan */}
-            <div className="flex-1 p-3.5 overflow-y-auto space-y-3 text-xs bg-slate-50/30">
-              {currentItem.messages.length === 0 ? (
-                <div className="text-center py-12 text-slate-400">
-                  Belum ada diskusi pada dokumen ini. Tulis pesan atau catatan audit di bawah.
-                </div>
-              ) : (
-                currentItem.messages.map((msg) => (
-                  <div 
-                    key={msg.id}
-                    className={`p-3 rounded-2xl border leading-relaxed space-y-1 ${
-                      msg.isAuditor 
-                        ? 'bg-amber-50/70 border-amber-200 ml-4' 
-                        : 'bg-white border-slate-200 mr-4'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between text-[10px]">
-                      <div className="flex items-center gap-1.5 font-bold">
-                        <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold ${
-                          msg.isAuditor ? 'bg-amber-600 text-white' : 'bg-emerald-700 text-white'
-                        }`}>
-                          {msg.senderAvatar}
-                        </span>
-                        <span className="text-slate-900">{msg.senderName}</span>
-                      </div>
-                      <span className="text-slate-400 font-mono">{msg.timestamp}</span>
-                    </div>
-
-                    <p className="text-slate-700 text-xs pl-6">
-                      {msg.message}
-                    </p>
-                  </div>
-                ))
-              )}
-            </div>
-
-            {/* Form Input Balasan Chat */}
-            <div className="p-3 border-t border-slate-100 bg-white space-y-2">
-              <div className="flex items-center justify-between text-[10px] text-slate-400">
-                <span>Mengirim sebagai: <strong>{activePortal === 'auditor' ? 'Drs. H. M. Husnan, M.Ag. (Auditor)' : 'Ahmad Zaki, S.E. (Bendahara)'}</strong></span>
-                <span className="font-mono">Waktu Server: WIB</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Input
-                  value={replyText}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setReplyText(e.target.value)}
-                  onKeyDown={(e: React.KeyboardEvent) => { if (e.key === 'Enter') handleSendMessage(); }}
-                  placeholder="Ketik catatan audit / pertanyaan auditee..."
-                  className="text-xs rounded-xl"
-                />
-                <Button
-                  onClick={handleSendMessage}
-                  className="bg-[#055838] hover:bg-[#04432b] text-white px-3 py-2 rounded-xl shrink-0"
-                >
-                  <Send className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-          </Card>
-        </div>
-
-      </div>
 
       {/* Modal Upload Berkas Auditee */}
       <Modal
