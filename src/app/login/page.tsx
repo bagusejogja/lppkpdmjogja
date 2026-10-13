@@ -48,6 +48,11 @@ export default function LoginPage() {
       const matchedUser = MOCK_USERS.find(u => u.email.toLowerCase() === email.toLowerCase());
       const roleName = matchedUser ? matchedUser.role : 'AUDITOR_INTERNAL';
       const userName = matchedUser ? matchedUser.full_name : 'Pengurus PDM';
+      // Simpan sesi user aktif ke localStorage
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('lppk_active_user_id', matchedUser ? matchedUser.id : 'u-1');
+      }
+
 
       toast.success(`Selamat datang, ${userName}!`, { icon: '✨' });
       setTimeout(() => {

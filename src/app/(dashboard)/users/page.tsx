@@ -69,7 +69,7 @@ export default function UsersManagementPage() {
   ]);
 
   // Grup / Entitas Utama (Default) - Disimpan sebagai unitId
-  const [defaultGroupUnitId, setDefaultGroupUnitId] = useState<number>(5);
+  const [defaultGroupId, setDefaultGroupId] = useState<string>("grp-init-1");
 
   const filteredUsers = users.filter(u => {
     const matchSearch = u.full_name.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase());
@@ -125,13 +125,12 @@ export default function UsersManagementPage() {
       toast.error('Minimal pengguna harus ditugaskan pada 1 unit!');
       return;
     }
-    const removedUnitId = assignedGroups[index].unitId;
+    const removedRowId = assignedGroups[index].id;
     const next = assignedGroups.filter((_, idx) => idx !== index);
     setAssignedGroups(next);
 
-    // Jika yang dihapus adalah default unit, pindahkan default ke baris pertama tersisa
-    if (defaultGroupUnitId === removedUnitId && next.length > 0) {
-      setDefaultGroupUnitId(next[0].unitId);
+    if (defaultGroupId === removedRowId && next.length > 0) {
+      setDefaultGroupId(next[0].id);
     }
   };
 
@@ -144,9 +143,7 @@ export default function UsersManagementPage() {
     setAssignedGroups(updated);
 
     // Jika belum ada default, set ke yang ini
-    if (!assignedGroups.some(g => g.unitId === defaultGroupUnitId)) {
-      setDefaultGroupUnitId(newUnitId);
-    }
+    // tetapkan default row jika perlu
   };
 
   // Ubah role pada baris tertentu
@@ -168,11 +165,11 @@ export default function UsersManagementPage() {
       groupId: `grp-${ag.unitId}`,
       groupName: ag.unitName,
       role: ag.role,
-      isDefault: ag.unitId === defaultGroupUnitId
+      isDefault: ag.id === defaultGroupId
     }));
 
     // Cari role default
-    const defaultGroupObj = assignedGroups.find(ag => ag.unitId === defaultGroupUnitId) || assignedGroups[0];
+    const defaultGroupObj = assignedGroups.find(ag => ag.id === defaultGroupId) || assignedGroups[0];
 
     const newUser: User = {
       id: `u-${Date.now()}`,
@@ -458,7 +455,7 @@ export default function UsersManagementPage() {
                 <div key={grp.id} className="p-3 bg-white rounded-xl border border-slate-200 shadow-2xs space-y-2">
                   <div className="flex items-center justify-between text-[11px]">
                     <span className="font-bold text-slate-700">
-                      Penugasan #{idx + 1} {grp.unitId === defaultGroupUnitId && <span className="text-emerald-700 font-bold bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200 ml-1">(Utama / Default)</span>}
+                      Penugasan #{idx + 1} {grp.id === defaultGroupId && <span className="text-emerald-700 font-bold bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200 ml-1">(Utama / Default)</span>}
                     </span>
                     {assignedGroups.length > 1 && (
                       <button
@@ -515,13 +512,13 @@ export default function UsersManagementPage() {
                 Grup / Entitas Utama (Default saat Login Pertama Kali) *
               </label>
               <select
-                value={defaultGroupUnitId}
-                onChange={(e) => setDefaultGroupUnitId(Number(e.target.value))}
+                value={defaultGroupId}
+                onChange={(e) => setDefaultGroupId(e.target.value)}
                 className="w-full text-xs border border-emerald-500 rounded-lg px-3 py-2 bg-emerald-50/50 text-emerald-900 font-bold focus:ring-2 focus:ring-[#055838]"
               >
-                {assignedGroups.map(grp => (
-                  <option key={grp.unitId} value={grp.unitId}>
-                    {grp.unitName} ({grp.role})
+                {assignedGroups.map((grp, idx) => (
+                  <option key={grp.id} value={grp.id}>
+                    #{idx + 1}. {grp.unitName} — Jabatan: {grp.role}
                   </option>
                 ))}
               </select>

@@ -31,7 +31,20 @@ export default function ProfilePage() {
     initialTab === 'password' ? 'password' : initialTab === 'bio' ? 'bio' : 'unit'
   );
 
-  const currentUser = MOCK_USERS[3]; // Ahmad Zaki (Multi-group demo)
+  const [currentUser, setCurrentUser] = useState(MOCK_USERS[0]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedUserId = localStorage.getItem('lppk_active_user_id');
+      if (savedUserId) {
+        const found = MOCK_USERS.find(u => u.id === savedUserId);
+        if (found) {
+          setCurrentUser(found);
+          setFullName(found.full_name);
+        }
+      }
+    }
+  }, []);
 
   // State Unit Aktif Switcher
   const [selectedGroupIndex, setSelectedGroupIndex] = useState(0);
