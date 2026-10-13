@@ -10,7 +10,8 @@ import {
   Clock, 
   Upload, 
   Eye, 
-  Pencil, 
+  Pencil,
+  Edit3, 
   Send,
   DollarSign,
   ChevronRight,
@@ -49,6 +50,15 @@ export default function SpjPage() {
   const [selectedSpj, setSelectedSpj] = useState<Spj | null>(spjs[0]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isApproveModalOpen, setIsApproveModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingSpj, setEditingSpj] = useState<Spj | null>(null);
+  const [editNomor, setEditNomor] = useState('');
+  const [editJudul, setEditJudul] = useState('');
+  const [editDeskripsi, setEditDeskripsi] = useState('');
+  const [editNominal, setEditNominal] = useState<number>(0);
+  const [editStatus, setEditStatus] = useState<Spj['status']>('PENDING_LEVEL_1');
+  const [editCurrentLevel, setEditCurrentLevel] = useState<number>(1);
+  const [editMaxLevels, setEditMaxLevels] = useState<number>(3);
   const [approvalDecision, setApprovalDecision] = useState<'APPROVE' | 'REJECT' | 'REVISION'>('APPROVE');
   const [approvalNotes, setApprovalNotes] = useState('');
 
@@ -75,6 +85,45 @@ export default function SpjPage() {
   ]);
 
   // Handler Buka Modal Approval dengan Pengecekan Isolasi Unit
+  const handleOpenEditModal = (spj: Spj) => {
+    setEditingSpj(spj);
+    setEditNomor(spj.nomor_spj);
+    setEditJudul(spj.judul_pengajuan);
+    setEditDeskripsi(spj.deskripsi || '');
+    setEditNominal(spj.total_nominal);
+    setEditStatus(spj.status);
+    setEditCurrentLevel(spj.current_level);
+    setEditMaxLevels(spj.max_levels);
+    setIsEditModalOpen(true);
+  };
+
+  const handleSaveEditSpj = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingSpj || !editNomor.trim() || !editJudul.trim()) {
+      toast.error('Nomor SPJ dan Judul pengajuan wajib diisi!');
+      return;
+    }
+
+    setSpjs(spjs.map(s => {
+      if (s.id === editingSpj.id) {
+        return {
+          ...s,
+          nomor_spj: editNomor.trim(),
+          judul_pengajuan: editJudul.trim(),
+          deskripsi: editDeskripsi.trim(),
+          total_nominal: Number(editNominal),
+          status: editStatus,
+          current_level: Number(editCurrentLevel),
+          max_levels: Number(editMaxLevels)
+        };
+      }
+      return s;
+    }));
+
+    setIsEditModalOpen(false);
+    toast.success(`SPJ "${editNomor}" berhasil diperbarui!`);
+  };
+
   const handleOpenApproveModal = (spj: Spj) => {
     setSelectedSpj(spj);
 
@@ -255,13 +304,24 @@ export default function SpjPage() {
                             <StatusBadge status={s.status} />
                           </td>
                           <td className="py-3 px-4 text-center">
-                            <Button
-                              size="sm"
-                              onClick={() => handleOpenApproveModal(s)}
-                              className="text-xs bg-[#055838] hover:bg-[#04432b] text-white font-bold"
-                            >
-                              Tindakan Approval
-                            </Button>
+                            <div className="flex items-center justify-center gap-1.5">
+                              <Button
+                                size="sm"
+                                onClick={() => handleOpenApproveModal(s)}
+                                className="text-xs bg-[#055838] hover:bg-[#04432b] text-white font-bold px-2.5 py-1 h-7"
+                              >
+                                Approval
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleOpenEditModal(s)}
+                                className="text-xs border-slate-300 hover:bg-slate-50 text-slate-700 px-2 py-1 h-7"
+                                title="Edit Berkas SPJ"
+                              >
+                                <Edit3 className="w-3.5 h-3.5 text-emerald-800" />
+                              </Button>
+                            </div>
                           </td>
                         </tr>
                       );
@@ -446,6 +506,108 @@ export default function SpjPage() {
           </div>
         )}
       </Modal>
+      {/* Modal Edit Pengajuan SPJ */}
+      <Modal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        title={`Edit Berkas SPJ: ${editingSpj?.nomor_spj}`}
+        description="Perbarui nomor SPJ, judul kegiatan, rincian anggaran belanja, atau tahapan approval."
+      >
+        <form onSubmit={handleSaveEditSpj} className="space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-bold text-slate-700 block mb-1">Nomor Surat SPJ *</label>
+              <Input
+                value={editNomor}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditNomor(e.target.value)}
+                required
+                className="text-xs font-mono"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-bold text-slate-700 block mb-1">Total Nominal Belanja (Rp) *</label>
+              <Input
+                type="number"
+                value={editNominal}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditNominal(Number(e.target.value))}
+                required
+                className="text-xs font-mono font-bold"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="text-xs font-bold text-slate-700 block mb-1">Judul / Nama Kegiatan Belanja *</label>
+            <Input
+              value={editJudul}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditJudul(e.target.value)}
+              required
+              className="text-xs"
+            />
+          </div>
+
+          <div>
+            <label className="text-xs font-bold text-slate-700 block mb-1">Deskripsi & Rincian Pengeluaran</label>
+            <textarea
+              value={editDeskripsi}
+              onChange={(e) => setEditDeskripsi(e.target.value)}
+              rows={3}
+              className="w-full text-xs border border-slate-300 rounded-xl p-2.5 bg-white font-medium"
+            />
+          </div>
+
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <label className="text-xs font-bold text-slate-700 block mb-1">Status Verifikasi</label>
+              <select
+                value={editStatus}
+                onChange={(e) => setEditStatus(e.target.value as any)}
+                className="w-full text-xs border border-slate-300 rounded-xl p-2 bg-white font-semibold"
+              >
+                <option value="DRAFT">DRAFT</option>
+                <option value="PENDING_LEVEL_1">PENDING_LEVEL_1 (Verifikator)</option>
+                <option value="PENDING_LEVEL_2">PENDING_LEVEL_2 (Pemeriksa Pajak)</option>
+                <option value="PENDING_LEVEL_3">PENDING_LEVEL_3 (Wakil Bendahara)</option>
+                <option value="APPROVED">APPROVED (Selesai & Sah)</option>
+                <option value="REJECTED">REJECTED (Ditolak)</option>
+                <option value="REVISION_REQUIRED">REVISION_REQUIRED (Perlu Revisi)</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-xs font-bold text-slate-700 block mb-1">Level Saat Ini</label>
+              <Input
+                type="number"
+                value={editCurrentLevel}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditCurrentLevel(Number(e.target.value))}
+                min={1}
+                max={5}
+                className="text-xs font-mono"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-bold text-slate-700 block mb-1">Maks Level Alur</label>
+              <Input
+                type="number"
+                value={editMaxLevels}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditMaxLevels(Number(e.target.value))}
+                min={1}
+                max={5}
+                className="text-xs font-mono"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-4 border-t border-slate-100">
+            <Button type="button" variant="outline" onClick={() => setIsEditModalOpen(false)} className="text-xs">
+              Batal
+            </Button>
+            <Button type="submit" className="bg-[#055838] hover:bg-[#04432b] text-white text-xs font-bold">
+              Simpan Perubahan SPJ
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }
+

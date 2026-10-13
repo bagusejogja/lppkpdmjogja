@@ -16,7 +16,10 @@ import {
   AlertCircle,
   Building2,
   Trash2,
-  Edit2
+  Edit2,
+  Edit3,
+  Save,
+  X
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Button } from '@/components/ui/Button';
@@ -38,52 +41,116 @@ interface AssignedGroupForm {
 export default function UsersManagementPage() {
   const [users, setUsers] = useState<User[]>(MOCK_USERS);
   const [search, setSearch] = useState('');
-  const [filterRole, setFilterRole] = useState<string>('ALL');
+  const [roleFilter, setRoleFilter] = useState<string>('ALL');
 
   // Modal Reset Password oleh Admin
   const [resetModalOpen, setResetModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [newAdminPassword, setNewAdminPassword] = useState('PdmJogja2026!');
-  const [sendEmailNotification, setSendEmailNotification] = useState(true);
+  const [sendResetEmail, setSendResetEmail] = useState(true);
 
   // Modal Tambah User & Multi-Group Dinamis
   const [addUserModalOpen, setAddUserModalOpen] = useState(false);
   const [newFullName, setNewFullName] = useState('');
   const [newEmail, setNewEmail] = useState('');
   const [newPhone, setNewPhone] = useState('');
-
-  // Multi-Group Assignment Dinamis (>2 unit bisa ditambahkan)
+  
+  // State Dinamis Penugasan Multi-Group (Bebas >2 Unit)
   const [assignedGroups, setAssignedGroups] = useState<AssignedGroupForm[]>([
-    {
-      id: 'grp-init-1',
-      unitId: 5, // Misal SD Muhammadiyah Karangkajang
-      unitName: 'SD Muhammadiyah Karangkajang',
-      role: 'STAFF_UNIT'
-    },
-    {
-      id: 'grp-init-2',
-      unitId: 14, // KL Lazismu
-      unitName: 'KL Lazismu Ngampilan',
-      role: 'BENDAHARA'
-    }
+    { id: 'grp-1', unitId: ALL_UNITS[0]?.id || 1, unitName: ALL_UNITS[0]?.nama_unit || 'Pimpinan Daerah Muhammadiyah', role: 'STAFF_UNIT' }
   ]);
+  const [defaultGroupId, setDefaultGroupId] = useState<string>('grp-1');
 
-  // Grup / Entitas Utama (Default) - Disimpan sebagai unitId
-  const [defaultGroupId, setDefaultGroupId] = useState<string>("grp-init-1");
+  // Modal Edit User
+  const [editUserModalOpen, setEditUserModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [editFullName, setEditFullName] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [editPhone, setEditPhone] = useState('');
+  const [editAssignedGroups, setEditAssignedGroups] = useState<AssignedGroupForm[]>([]);
+  const [editDefaultGroupId, setEditDefaultGroupId] = useState<string>('');
 
+  // Filter list
   const filteredUsers = users.filter(u => {
-    const matchSearch = u.full_name.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase());
-    const matchRole = filterRole === 'ALL' || u.role === filterRole;
+    const matchSearch = u.full_name.toLowerCase().includes(search.toLowerCase()) || 
+                        u.email.toLowerCase().includes(search.toLowerCase());
+    const matchRole = roleFilter === 'ALL' || u.role === roleFilter;
     return matchSearch && matchRole;
   });
 
-  // Handler Reset Password oleh Admin
+  // Handler Buka Modal Edit User
+  const handleOpenEditUser = (u: User) => {
+    setEditingUser(u);
+    setEditFullName(u.full_name);
+    setEditEmail(u.email);
+    setEditPhone(u.phone || '');
+
+    // Map user groups into AssignedGroupForm
+    const existingGroups: AssignedGroupForm[] = (u.groups && u.groups.length > 0)
+      ? u.groups.map((g, idx) => {
+          const unitIdNum = parseInt(g.groupId.replace('grp-', '')) || (idx + 1);
+          return {
+            id: `edit-grp-${idx + 1}`,
+            unitId: unitIdNum,
+            unitName: g.groupName,
+            role: g.role
+          };
+        })
+      : [{
+          id: 'edit-grp-1',
+          unitId: 1,
+          unitName: ALL_UNITS[0]?.nama_unit || 'PDM Kota Yogyakarta',
+          role: u.role
+        }];
+
+    setEditAssignedGroups(existingGroups);
+    setEditDefaultGroupId(existingGroups[0].id);
+    setEditUserModalOpen(true);
+  };
+
+  // Handler Simpan Perubahan Edit User
+  const handleSaveEditUser = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingUser || !editFullName.trim() || !editEmail.trim()) {
+      toast.error('Nama lengkap dan email wajib diisi!');
+      return;
+    }
+
+    const updatedGroups: UserGroupMembership[] = editAssignedGroups.map(ag => ({
+      groupId: `grp-${ag.unitId}`,
+      groupName: ag.unitName,
+      role: ag.role,
+      isDefault: ag.id === editDefaultGroupId
+    }));
+
+    const defaultGroupObj = editAssignedGroups.find(ag => ag.id === editDefaultGroupId) || editAssignedGroups[0];
+
+    setUsers(users.map(u => {
+      if (u.id === editingUser.id) {
+        return {
+          ...u,
+          full_name: editFullName.trim(),
+          email: editEmail.trim(),
+          phone: editPhone.trim(),
+          role: defaultGroupObj.role,
+          organization_id: `org-${defaultGroupObj.unitId}`,
+          groups: updatedGroups
+        };
+      }
+      return u;
+    }));
+
+    setEditUserModalOpen(false);
+    toast.success(`Profil pengguna "${editFullName}" berhasil diperbarui!`);
+  };
+
+  // Handler Reset Password
   const handleAdminResetPassword = async () => {
     if (!selectedUser) return;
 
-    if (sendEmailNotification) {
+    if (sendResetEmail) {
       try {
-        await fetch('/api/notify', {
+        await fetch('/api/send-email', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -106,7 +173,7 @@ export default function UsersManagementPage() {
     setResetModalOpen(false);
   };
 
-  // Tambah baris penugasan group unit baru
+  // Tambah baris penugasan group unit baru pada modal Add
   const handleAddGroupRow = () => {
     const newRowId = `grp-${Date.now()}`;
     const defaultUnit = ALL_UNITS[0];
@@ -119,7 +186,7 @@ export default function UsersManagementPage() {
     setAssignedGroups([...assignedGroups, newRow]);
   };
 
-  // Hapus baris penugasan group
+  // Hapus baris penugasan group pada modal Add
   const handleRemoveGroupRow = (index: number) => {
     if (assignedGroups.length <= 1) {
       toast.error('Minimal pengguna harus ditugaskan pada 1 unit!');
@@ -134,23 +201,61 @@ export default function UsersManagementPage() {
     }
   };
 
-  // Ubah unit pada baris tertentu
+  // Ubah unit pada modal Add
   const handleUpdateGroupUnit = (index: number, newUnitId: number) => {
     const selectedUnitObj = ALL_UNITS.find(u => u.id === newUnitId);
     const updated = [...assignedGroups];
     updated[index].unitId = newUnitId;
     updated[index].unitName = selectedUnitObj ? selectedUnitObj.nama_unit : `Unit #${newUnitId}`;
     setAssignedGroups(updated);
-
-    // Jika belum ada default, set ke yang ini
-    // tetapkan default row jika perlu
   };
 
-  // Ubah role pada baris tertentu
+  // Ubah role pada modal Add
   const handleUpdateGroupRole = (index: number, role: UserRole) => {
     const updated = [...assignedGroups];
     updated[index].role = role;
     setAssignedGroups(updated);
+  };
+
+  // Multi-group handlers untuk Modal Edit
+  const handleAddEditGroupRow = () => {
+    const newRowId = `edit-grp-${Date.now()}`;
+    const defaultUnit = ALL_UNITS[0];
+    const newRow: AssignedGroupForm = {
+      id: newRowId,
+      unitId: defaultUnit.id,
+      unitName: defaultUnit.nama_unit,
+      role: 'STAFF_UNIT'
+    };
+    setEditAssignedGroups([...editAssignedGroups, newRow]);
+  };
+
+  const handleRemoveEditGroupRow = (index: number) => {
+    if (editAssignedGroups.length <= 1) {
+      toast.error('Minimal pengguna harus ditugaskan pada 1 unit!');
+      return;
+    }
+    const removedRowId = editAssignedGroups[index].id;
+    const next = editAssignedGroups.filter((_, idx) => idx !== index);
+    setEditAssignedGroups(next);
+
+    if (editDefaultGroupId === removedRowId && next.length > 0) {
+      setEditDefaultGroupId(next[0].id);
+    }
+  };
+
+  const handleUpdateEditGroupUnit = (index: number, newUnitId: number) => {
+    const selectedUnitObj = ALL_UNITS.find(u => u.id === newUnitId);
+    const updated = [...editAssignedGroups];
+    updated[index].unitId = newUnitId;
+    updated[index].unitName = selectedUnitObj ? selectedUnitObj.nama_unit : `Unit #${newUnitId}`;
+    setEditAssignedGroups(updated);
+  };
+
+  const handleUpdateEditGroupRole = (index: number, role: UserRole) => {
+    const updated = [...editAssignedGroups];
+    updated[index].role = role;
+    setEditAssignedGroups(updated);
   };
 
   // Handler Tambah User Baru
@@ -160,7 +265,6 @@ export default function UsersManagementPage() {
       return;
     }
 
-    // Bangun groups list
     const groups: UserGroupMembership[] = assignedGroups.map(ag => ({
       groupId: `grp-${ag.unitId}`,
       groupName: ag.unitName,
@@ -168,7 +272,6 @@ export default function UsersManagementPage() {
       isDefault: ag.id === defaultGroupId
     }));
 
-    // Cari role default
     const defaultGroupObj = assignedGroups.find(ag => ag.id === defaultGroupId) || assignedGroups[0];
 
     const newUser: User = {
@@ -215,7 +318,7 @@ export default function UsersManagementPage() {
             className="bg-[#055838] hover:bg-[#04432b] text-white flex items-center gap-2 text-xs font-bold px-4 py-2.5 rounded-xl shadow-sm"
           >
             <Plus className="w-4 h-4" />
-            Tambah Pengguna & Multi-Grup
+            + Tambah Pengguna & Multi-Grup
           </Button>
         </div>
       </div>
@@ -226,23 +329,23 @@ export default function UsersManagementPage() {
           <div className="flex items-center gap-2 w-full md:w-auto">
             <span className="text-xs font-semibold text-slate-600">Filter Role:</span>
             <select
-              value={filterRole}
-              onChange={(e) => setFilterRole(e.target.value)}
-              className="text-xs border border-slate-300 rounded-lg px-2.5 py-1.5 bg-white text-slate-700 focus:outline-none focus:ring-1 focus:ring-[#055838]"
+              value={roleFilter}
+              onChange={(e) => setRoleFilter(e.target.value)}
+              className="text-xs border border-slate-300 rounded-lg px-2.5 py-1.5 bg-white text-slate-700 font-medium"
             >
-              <option value="ALL">Semua Peran</option>
-              <option value="SUPER_ADMIN">Super Admin</option>
-              <option value="AUDITOR_INTERNAL">Auditor LPPK</option>
-              <option value="BENDAHARA">Bendahara</option>
-              <option value="APPROVER_SPJ">Approver SPJ</option>
-              <option value="STAFF_UNIT">Staff Auditee</option>
+              <option value="ALL">Semua Tingkatan Role</option>
+              <option value="SUPER_ADMIN">SUPER_ADMIN</option>
+              <option value="AUDITOR_LEAD">AUDITOR_LEAD</option>
+              <option value="VERIFIKATOR_KEUANGAN">VERIFIKATOR_KEUANGAN</option>
+              <option value="PIMPINAN_PDM">PIMPINAN_PDM</option>
+              <option value="STAFF_UNIT">STAFF_UNIT</option>
             </select>
           </div>
 
           <div className="relative w-full md:w-80">
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
             <Input
-              placeholder="Cari nama, email pengguna..."
+              placeholder="Cari nama, email, NBM pengguna..."
               value={search}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
               className="pl-9 text-xs rounded-xl"
@@ -251,33 +354,28 @@ export default function UsersManagementPage() {
         </CardContent>
       </Card>
 
-      {/* Tabel Pengguna & Penugasan Multi-Grup */}
+      {/* Tabel Pengguna */}
       <Card className="rounded-2xl border-slate-200/90 shadow-sm overflow-hidden">
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-slate-600">
-              <thead className="bg-slate-100/70 border-b border-slate-200 text-slate-700 uppercase font-bold text-[10px] tracking-wider">
+          <div className="overflow-x-auto text-xs">
+            <table className="w-full text-left">
+              <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 uppercase font-semibold text-[10px]">
                 <tr>
-                  <th className="px-4 py-3.5">Nama & Kontak</th>
-                  <th className="px-4 py-3.5">Peran Utama</th>
-                  <th className="px-4 py-3.5 min-w-[280px]">Penugasan Unit Kerja (Multi-Grup)</th>
-                  <th className="px-4 py-3.5 text-center">Status</th>
-                  <th className="px-4 py-3.5 text-center">Aksi Administrator</th>
+                  <th className="py-3 px-4">Pengguna</th>
+                  <th className="py-3 px-4">Role Default</th>
+                  <th className="py-3 px-4">Penugasan Multi-Grup (Entitas Unit)</th>
+                  <th className="py-3 px-4 text-center">Status</th>
+                  <th className="py-3 px-4 text-center">Aksi Manajemen</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {filteredUsers.map((u) => (
                   <tr key={u.id} className="hover:bg-slate-50/70 transition-colors">
                     <td className="px-4 py-3.5">
-                      <div className="font-bold text-slate-900 text-xs flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-full bg-[#055838] text-white flex items-center justify-center font-bold text-[10px]">
-                          {u.full_name.substring(0, 2).toUpperCase()}
-                        </div>
-                        {u.full_name}
-                      </div>
-                      <div className="text-[11px] text-slate-400 mt-0.5 ml-9 flex items-center gap-3">
-                        <span className="flex items-center gap-1"><Mail className="w-3 h-3" /> {u.email}</span>
-                        {u.phone && <span className="flex items-center gap-1"><Phone className="w-3 h-3" /> {u.phone}</span>}
+                      <div className="font-bold text-slate-900">{u.full_name}</div>
+                      <div className="text-[11px] text-slate-500 flex items-center gap-2 mt-0.5">
+                        <span className="flex items-center gap-1"><Mail className="w-3 h-3 text-slate-400" />{u.email}</span>
+                        {u.phone && <span className="flex items-center gap-1"><Phone className="w-3 h-3 text-slate-400" />{u.phone}</span>}
                       </div>
                     </td>
 
@@ -285,7 +383,7 @@ export default function UsersManagementPage() {
                       <RoleBadge role={u.role} />
                     </td>
 
-                    <td className="px-4 py-3.5">
+                    <td className="px-4 py-3.5 max-w-md">
                       <div className="flex flex-wrap gap-1.5">
                         {u.groups && u.groups.length > 0 ? (
                           u.groups.map((grp, idx) => (
@@ -317,18 +415,31 @@ export default function UsersManagementPage() {
                     </td>
 
                     <td className="px-4 py-3.5 text-center">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelectedUser(u);
-                          setNewAdminPassword('PdmJogja2026!');
-                          setResetModalOpen(true);
-                        }}
-                        className="inline-flex items-center gap-1.5 text-xs text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-2.5 py-1.5 rounded-lg font-semibold transition-colors"
-                      >
-                        <KeyRound className="w-3.5 h-3.5 text-amber-600" />
-                        <span>Reset Password</span>
-                      </button>
+                      <div className="flex items-center justify-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEditUser(u)}
+                          className="inline-flex items-center gap-1 text-xs text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2.5 py-1.5 rounded-lg font-bold transition-colors"
+                          title="Edit Profil & Penugasan Unit Pengguna"
+                        >
+                          <Edit3 className="w-3.5 h-3.5 text-emerald-700" />
+                          <span>Edit</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedUser(u);
+                            setNewAdminPassword('PdmJogja2026!');
+                            setResetModalOpen(true);
+                          }}
+                          className="inline-flex items-center gap-1 text-xs text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-2.5 py-1.5 rounded-lg font-semibold transition-colors"
+                          title="Reset Password Pengguna"
+                        >
+                          <KeyRound className="w-3.5 h-3.5 text-amber-600" />
+                          <span>Reset Sandi</span>
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -358,185 +469,291 @@ export default function UsersManagementPage() {
                 value={newAdminPassword}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewAdminPassword(e.target.value)}
                 placeholder="Masukkan kata sandi baru"
+                className="text-xs font-mono font-bold"
               />
-              <span className="text-[11px] text-slate-400">Pengguna disarankan mengganti password ini setelah login.</span>
             </div>
 
-            <label className="flex items-center gap-2 cursor-pointer pt-1">
+            <div className="flex items-center gap-2 p-2.5 bg-slate-50 rounded-xl border border-slate-200">
               <input
                 type="checkbox"
-                checked={sendEmailNotification}
-                onChange={(e) => setSendEmailNotification(e.target.checked)}
-                className="rounded border-slate-300 text-[#055838] focus:ring-[#055838]"
+                id="sendResetEmail"
+                checked={sendResetEmail}
+                onChange={(e) => setSendResetEmail(e.target.checked)}
+                className="rounded text-[#055838] focus:ring-[#055838]"
               />
-              <span className="text-slate-700 font-medium">Kirimkan instruksi & password baru ini ke email pengguna otomatis via SMTP</span>
-            </label>
+              <label htmlFor="sendResetEmail" className="text-xs text-slate-700 font-medium">
+                Kirim notifikasi email otomatis ke {selectedUser.email}
+              </label>
+            </div>
 
-            <div className="pt-3 border-t border-slate-100 flex justify-end gap-2">
+            <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
               <Button variant="outline" onClick={() => setResetModalOpen(false)} className="text-xs">
                 Batal
               </Button>
               <Button onClick={handleAdminResetPassword} className="bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold">
-                Terapkan Reset Password
+                Terapkan Kata Sandi Baru
               </Button>
             </div>
           </div>
         )}
       </Modal>
 
-      {/* MODAL 2: TAMBAH USER & MULTI-GROUP DINAMIS (>2 UNIT, DROPDOWN ALL_UNITS, ROLE PER UNIT) */}
+      {/* MODAL 2: TAMBAH USER & MULTI-GROUP DINAMIS */}
       <Modal
         isOpen={addUserModalOpen}
         onClose={() => setAddUserModalOpen(false)}
-        title="Tambah Pengguna Baru & Penugasan Multi-Grup Bebas"
+        title="Tambah Pengguna Baru & Penugasan Multi-Grup"
       >
-        <div className="space-y-4 text-xs max-h-[75vh] overflow-y-auto pr-1">
-          <p className="text-slate-500">
-            Pengguna dapat ditugaskan pada lebih dari satu unit kerja dengan jabatan/peran yang berbeda di masing-masing unit.
-          </p>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <label className="font-semibold text-slate-700">Nama Lengkap & Gelar *</label>
+        <div className="space-y-4 text-xs">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label className="font-semibold text-slate-700 block mb-1">Nama Lengkap & Gelar *</label>
               <Input
-                placeholder="Contoh: Drs. H. Bambang Irawan, M.Ag"
                 value={newFullName}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewFullName(e.target.value)}
-                required
+                placeholder="H. Ahmad Dahlan, S.E."
+                className="text-xs"
               />
             </div>
-            <div className="space-y-1">
-              <label className="font-semibold text-slate-700">Email Akun (Login) *</label>
+            <div>
+              <label className="font-semibold text-slate-700 block mb-1">Email Resmi *</label>
               <Input
                 type="email"
-                placeholder="nama@muhammadiyah.or.id"
                 value={newEmail}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewEmail(e.target.value)}
-                required
+                placeholder="nama@muhammadiyah.id"
+                className="text-xs"
               />
             </div>
           </div>
 
-          <div className="space-y-1">
-            <label className="font-semibold text-slate-700">Nomor Telepon / WhatsApp</label>
+          <div>
+            <label className="font-semibold text-slate-700 block mb-1">Nomor Kontak / WhatsApp</label>
             <Input
-              placeholder="0812-xxxx-xxxx"
               value={newPhone}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewPhone(e.target.value)}
+              placeholder="0812-3456-7890"
+              className="text-xs"
             />
           </div>
 
-          {/* SECTION MULTI-GROUP ASSIGNMENT DINAMIS */}
-          <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
+          {/* Bagian Penugasan Multi-Grup Bebas */}
+          <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
             <div className="flex items-center justify-between">
-              <span className="font-bold text-slate-900 flex items-center gap-1.5">
-                <Layers className="w-4 h-4 text-[#055838]" />
-                Daftar Penugasan Unit & Peran ({assignedGroups.length} Unit Ditugaskan)
-              </span>
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
+              <div>
+                <span className="font-bold text-slate-900 block">Penugasan Grup Ganda (Multi-Group Assignment)</span>
+                <span className="text-[11px] text-slate-500">Bebas tugaskan ke lebih dari 2 unit dengan role berbeda per unit</span>
+              </div>
+              <Button 
+                size="sm" 
+                variant="outline" 
                 onClick={handleAddGroupRow}
-                className="text-[11px] h-7 bg-white text-[#055838] border-emerald-600 hover:bg-emerald-50 flex items-center gap-1"
+                className="text-xs bg-white text-[#055838] border-emerald-600 hover:bg-emerald-50 font-bold"
               >
-                <Plus className="w-3 h-3" />
-                Tambah Unit Lain
+                + Tambah Unit Lain
               </Button>
             </div>
 
-            <p className="text-[11px] text-slate-500 leading-relaxed">
-              Tentukan entitas yang dapat diakses pengguna beserta peran/jabatan spesifik untuk memisahkan wewenang di setiap unit.
-            </p>
-
-            {/* List Baris Penugasan Group */}
-            <div className="space-y-2.5">
+            <div className="space-y-2">
               {assignedGroups.map((grp, idx) => (
-                <div key={grp.id} className="p-3 bg-white rounded-xl border border-slate-200 shadow-2xs space-y-2">
-                  <div className="flex items-center justify-between text-[11px]">
-                    <span className="font-bold text-slate-700">
-                      Penugasan #{idx + 1} {grp.id === defaultGroupId && <span className="text-emerald-700 font-bold bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200 ml-1">(Utama / Default)</span>}
-                    </span>
+                <div key={grp.id} className="p-2.5 bg-white border border-slate-200 rounded-lg flex flex-col md:flex-row items-center gap-2">
+                  <div className="w-full md:w-5/12">
+                    <label className="text-[10px] text-slate-400 block mb-0.5">Pilih Unit Kerja:</label>
+                    <select
+                      value={grp.unitId}
+                      onChange={(e) => handleUpdateGroupUnit(idx, parseInt(e.target.value))}
+                      className="w-full border border-slate-300 rounded-lg p-1.5 text-xs bg-white font-medium truncate"
+                    >
+                      {ALL_UNITS.map(u => (
+                        <option key={u.id} value={u.id}>
+                          {u.nama_unit} ({u.tipe})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="w-full md:w-4/12">
+                    <label className="text-[10px] text-slate-400 block mb-0.5">Role Pada Unit Ini:</label>
+                    <select
+                      value={grp.role}
+                      onChange={(e) => handleUpdateGroupRole(idx, e.target.value as UserRole)}
+                      className="w-full border border-slate-300 rounded-lg p-1.5 text-xs bg-white font-medium"
+                    >
+                      <option value="STAFF_UNIT">STAFF_UNIT (Auditee/Pembuat)</option>
+                      <option value="VERIFIKATOR_KEUANGAN">VERIFIKATOR_KEUANGAN</option>
+                      <option value="AUDITOR_LEAD">AUDITOR_LEAD</option>
+                      <option value="PIMPINAN_PDM">PIMPINAN_PDM</option>
+                      <option value="SUPER_ADMIN">SUPER_ADMIN</option>
+                    </select>
+                  </div>
+
+                  <div className="w-full md:w-2/12 flex items-center justify-center gap-2 pt-3 md:pt-0">
+                    <button
+                      type="button"
+                      onClick={() => setDefaultGroupId(grp.id)}
+                      className={`px-2 py-1 rounded text-[10px] font-bold border transition-colors ${
+                        defaultGroupId === grp.id
+                          ? 'bg-amber-100 text-amber-800 border-amber-300'
+                          : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'
+                      }`}
+                    >
+                      {defaultGroupId === grp.id ? '★ Default' : 'Jadikan Default'}
+                    </button>
+
                     {assignedGroups.length > 1 && (
                       <button
                         type="button"
                         onClick={() => handleRemoveGroupRow(idx)}
-                        className="text-slate-400 hover:text-rose-600 p-0.5"
-                        title="Hapus penugasan unit ini"
+                        className="text-slate-400 hover:text-rose-600 p-1"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     )}
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-12 gap-2">
-                    {/* Dropdown Pilihan Unit dari ALL_UNITS 165 */}
-                    <div className="sm:col-span-7">
-                      <label className="text-[10px] text-slate-400 block font-semibold mb-0.5">Pilih Entitas / Unit Kerja</label>
-                      <select
-                        value={grp.unitId}
-                        onChange={(e) => handleUpdateGroupUnit(idx, Number(e.target.value))}
-                        className="w-full text-xs border border-slate-300 rounded-lg px-2.5 py-1.5 bg-white text-slate-800 font-medium focus:ring-1 focus:ring-[#055838]"
-                      >
-                        {ALL_UNITS.map(u => (
-                          <option key={u.id} value={u.id}>
-                            #{u.id} - {u.nama_unit} {u.nama_unit_pendek ? `(${u.nama_unit_pendek})` : ''}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {/* Dropdown Role Khusus Unit Ini */}
-                    <div className="sm:col-span-5">
-                      <label className="text-[10px] text-slate-400 block font-semibold mb-0.5">Jabatan / Role di Unit Ini</label>
-                      <select
-                        value={grp.role}
-                        onChange={(e) => handleUpdateGroupRole(idx, e.target.value as UserRole)}
-                        className="w-full text-xs border border-slate-300 rounded-lg px-2.5 py-1.5 bg-white text-slate-800 font-medium focus:ring-1 focus:ring-[#055838]"
-                      >
-                        <option value="STAFF_UNIT">Staff Auditee Unit</option>
-                        <option value="BENDAHARA">Bendahara Unit</option>
-                        <option value="APPROVER_SPJ">Approver / Pimpinan Unit</option>
-                        <option value="AUDITOR_INTERNAL">Auditor LPPK</option>
-                        <option value="SUPER_ADMIN">Super Administrator</option>
-                      </select>
-                    </div>
                   </div>
                 </div>
               ))}
             </div>
-
-            {/* Dropdown Pemilih Unit Utama / Default */}
-            <div className="pt-2 border-t border-slate-200">
-              <label className="font-bold text-slate-800 block text-xs mb-1">
-                Grup / Entitas Utama (Default saat Login Pertama Kali) *
-              </label>
-              <select
-                value={defaultGroupId}
-                onChange={(e) => setDefaultGroupId(e.target.value)}
-                className="w-full text-xs border border-emerald-500 rounded-lg px-3 py-2 bg-emerald-50/50 text-emerald-900 font-bold focus:ring-2 focus:ring-[#055838]"
-              >
-                {assignedGroups.map((grp, idx) => (
-                  <option key={grp.id} value={grp.id}>
-                    #{idx + 1}. {grp.unitName} — Jabatan: {grp.role}
-                  </option>
-                ))}
-              </select>
-              <span className="text-[10px] text-slate-500 mt-1 block">
-                Pilihan otomatis bersumber dari unit-unit yang ditugaskan di atas. Pengguna akan langsung berada di unit ini saat login.
-              </span>
-            </div>
           </div>
 
-          <div className="pt-3 border-t border-slate-100 flex justify-end gap-2">
+          <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
             <Button variant="outline" onClick={() => setAddUserModalOpen(false)} className="text-xs">
               Batal
             </Button>
             <Button onClick={handleCreateUser} className="bg-[#055838] hover:bg-[#04432b] text-white text-xs font-bold">
-              Simpan Pengguna & Hak Akses
+              Simpan Pengguna Baru
             </Button>
           </div>
         </div>
+      </Modal>
+
+      {/* MODAL 3: EDIT PENGGUNA & PENUGASAN MULTI-GRUP */}
+      <Modal
+        isOpen={editUserModalOpen}
+        onClose={() => setEditUserModalOpen(false)}
+        title={`Edit Profil & Penugasan: ${editingUser?.full_name}`}
+      >
+        <form onSubmit={handleSaveEditUser} className="space-y-4 text-xs">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label className="font-semibold text-slate-700 block mb-1">Nama Lengkap & Gelar *</label>
+              <Input
+                value={editFullName}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditFullName(e.target.value)}
+                required
+                className="text-xs"
+              />
+            </div>
+            <div>
+              <label className="font-semibold text-slate-700 block mb-1">Email Resmi *</label>
+              <Input
+                type="email"
+                value={editEmail}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditEmail(e.target.value)}
+                required
+                className="text-xs"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="font-semibold text-slate-700 block mb-1">Nomor Kontak / WhatsApp</label>
+            <Input
+              value={editPhone}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditPhone(e.target.value)}
+              placeholder="0812-3456-7890"
+              className="text-xs"
+            />
+          </div>
+
+          {/* Penugasan Multi-Grup pada Edit */}
+          <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="font-bold text-slate-900 block">Penugasan Grup & Wewenang Unit</span>
+                <span className="text-[11px] text-slate-500">Sesuaikan unit penugasan dan peran aktif pengguna</span>
+              </div>
+              <Button 
+                size="sm" 
+                variant="outline" 
+                type="button"
+                onClick={handleAddEditGroupRow}
+                className="text-xs bg-white text-[#055838] border-emerald-600 hover:bg-emerald-50 font-bold"
+              >
+                + Tambah Unit Lain
+              </Button>
+            </div>
+
+            <div className="space-y-2">
+              {editAssignedGroups.map((grp, idx) => (
+                <div key={grp.id} className="p-2.5 bg-white border border-slate-200 rounded-lg flex flex-col md:flex-row items-center gap-2">
+                  <div className="w-full md:w-5/12">
+                    <label className="text-[10px] text-slate-400 block mb-0.5">Pilih Unit Kerja:</label>
+                    <select
+                      value={grp.unitId}
+                      onChange={(e) => handleUpdateEditGroupUnit(idx, parseInt(e.target.value))}
+                      className="w-full border border-slate-300 rounded-lg p-1.5 text-xs bg-white font-medium truncate"
+                    >
+                      {ALL_UNITS.map(u => (
+                        <option key={u.id} value={u.id}>
+                          {u.nama_unit} ({u.tipe})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="w-full md:w-4/12">
+                    <label className="text-[10px] text-slate-400 block mb-0.5">Role Pada Unit Ini:</label>
+                    <select
+                      value={grp.role}
+                      onChange={(e) => handleUpdateEditGroupRole(idx, e.target.value as UserRole)}
+                      className="w-full border border-slate-300 rounded-lg p-1.5 text-xs bg-white font-medium"
+                    >
+                      <option value="STAFF_UNIT">STAFF_UNIT (Auditee/Pembuat)</option>
+                      <option value="VERIFIKATOR_KEUANGAN">VERIFIKATOR_KEUANGAN</option>
+                      <option value="AUDITOR_LEAD">AUDITOR_LEAD</option>
+                      <option value="PIMPINAN_PDM">PIMPINAN_PDM</option>
+                      <option value="SUPER_ADMIN">SUPER_ADMIN</option>
+                    </select>
+                  </div>
+
+                  <div className="w-full md:w-2/12 flex items-center justify-center gap-2 pt-3 md:pt-0">
+                    <button
+                      type="button"
+                      onClick={() => setEditDefaultGroupId(grp.id)}
+                      className={`px-2 py-1 rounded text-[10px] font-bold border transition-colors ${
+                        editDefaultGroupId === grp.id
+                          ? 'bg-amber-100 text-amber-800 border-amber-300'
+                          : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'
+                      }`}
+                    >
+                      {editDefaultGroupId === grp.id ? '★ Default' : 'Jadikan Default'}
+                    </button>
+
+                    {editAssignedGroups.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveEditGroupRow(idx)}
+                        className="text-slate-400 hover:text-rose-600 p-1"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+            <Button variant="outline" type="button" onClick={() => setEditUserModalOpen(false)} className="text-xs">
+              Batal
+            </Button>
+            <Button type="submit" className="bg-[#055838] hover:bg-[#04432b] text-white text-xs font-bold">
+              <Save className="w-4 h-4 mr-1.5" />
+              Simpan Perubahan Pengguna
+            </Button>
+          </div>
+        </form>
       </Modal>
     </div>
   );

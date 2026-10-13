@@ -4,7 +4,8 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
-  LayoutDashboard, 
+  LayoutDashboard,
+  Briefcase, 
   FileCheck2, 
   FileSpreadsheet, 
   BookOpen, 
@@ -60,6 +61,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       category: 'OPERASIONAL & WORKFLOW',
       items: [
         { label: 'Dashboard & Analitik', href: '/dashboard', icon: LayoutDashboard },
+        { label: 'Ruang Audit & Kertas Kerja', href: '/engagements', icon: Briefcase },
         { label: 'Audit Dokumen (Q&A)', href: '/audit', icon: FileCheck2 },
         { label: 'Approval SPJ (1-5 Lv)', href: '/spj', icon: FileSpreadsheet },
         { label: 'Repositori SOP', href: '/sop', icon: BookOpen },
