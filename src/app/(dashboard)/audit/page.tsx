@@ -28,7 +28,8 @@ import {
   User,
   ShieldCheck,
   ChevronRight,
-  ExternalLink
+  ExternalLink,
+  UserCheck
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -38,20 +39,17 @@ import { StatusBadge, Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
 import { Input, Select, Textarea } from '@/components/ui/Forms';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/Table';
-import { ALL_UNITS, UnitRecord } from '@/lib/units-data';
+import { ALL_UNITS } from '@/lib/units-data';
 import { buildR2StorageKey } from '@/lib/storage-helper';
-import { DocumentRequest, RequestAttachment, RequestStatus } from '@/types/database';
+import { RequestStatus } from '@/types/database';
 
 export default function AuditPage() {
-  // Mode Sudut Pandang (Auditor vs Auditee Input)
   const [activePortal, setActivePortal] = useState<'auditee' | 'auditor'>('auditee');
-
-  // Filter & Unit Aktif
-  const [selectedUnitId, setSelectedUnitId] = useState<number>(113); // Default SD Muh Kauman / Masjid
+  const [selectedUnitId, setSelectedUnitId] = useState<number>(113); // SD Muh Kauman
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
-  // Sample data permintaan audit
+  // Sample data permintaan audit dengan METADATA PENGUNGGAH LENGKAP
   const [auditItems, setAuditItems] = useState([
     {
       id: 'REQ-01',
@@ -74,7 +72,10 @@ export default function AuditPage() {
           r2Key: 'SEK-KAUMAN/2026/Audit_Docs/REQ-01/BKU_Jan_Mar_2026.xlsx',
           url: 'https://pub-7edd06e807b546809446e2261c43351f.r2.dev/sample.xlsx',
           notes: 'Sudah rekonsiliasi bank nihil selisih',
-          uploadedAt: '2026-04-11 09:30'
+          uploadedBy: 'Ahmad Zaki Al-Farisi',
+          uploadedRole: 'Bendahara Sekolah / Unit',
+          createdAt: '11 April 2026, 09:30 WIB',
+          updatedAt: '12 April 2026, 14:10 WIB'
         }
       ]
     },
@@ -99,7 +100,10 @@ export default function AuditPage() {
           r2Key: 'SEK-KAUMAN/2026/Audit_Docs/REQ-02/SK_Gaji_Pegawai.pdf',
           url: 'https://pub-7edd06e807b546809446e2261c43351f.r2.dev/sample.pdf',
           notes: 'Legalisir Dikdasmen PDM',
-          uploadedAt: '2026-04-08 14:15'
+          uploadedBy: 'Dra. Hj. Siti Maryam',
+          uploadedRole: 'Kepala Sekolah SD Muhi Kauman',
+          createdAt: '08 April 2026, 14:15 WIB',
+          updatedAt: '10 April 2026, 11:00 WIB'
         }
       ]
     },
@@ -124,7 +128,10 @@ export default function AuditPage() {
           r2Key: 'SEK-KAUMAN/2026/Audit_Docs/REQ-03/Nota_Bahan.jpg',
           url: 'https://pub-7edd06e807b546809446e2261c43351f.r2.dev/sample.jpg',
           notes: 'Nota pembelian tanggal 20 Februari',
-          uploadedAt: '2026-04-09 11:00'
+          uploadedBy: 'Bambang Irawan',
+          uploadedRole: 'Staff Sarana & Prasarana',
+          createdAt: '09 April 2026, 11:00 WIB',
+          updatedAt: '10 April 2026, 16:45 WIB'
         }
       ]
     },
@@ -149,8 +156,10 @@ export default function AuditPage() {
   const [newFileTitle, setNewFileTitle] = useState('');
   const [newFileNotes, setNewFileNotes] = useState('');
   const [uploadedFileName, setUploadedFileName] = useState('');
+  const [uploaderName, setUploaderName] = useState('Ahmad Zaki Al-Farisi');
+  const [uploaderRole, setUploaderRole] = useState('Bendahara Takmir / Unit');
 
-  // Auditor Modal State: Buat Permintaan Baru
+  // Auditor Modal State
   const [createReqModalOpen, setCreateReqModalOpen] = useState(false);
   const [newReqTitle, setNewReqTitle] = useState('');
   const [newReqCategory, setNewReqCategory] = useState('KEUANGAN');
@@ -164,7 +173,6 @@ export default function AuditPage() {
   const [decisionNotes, setDecisionNotes] = useState('');
   const [selectedReqForDecision, setSelectedReqForDecision] = useState<any>(null);
 
-  // Filtered items berdasarkan unit dan status
   const currentUnit = ALL_UNITS.find(u => u.id === selectedUnitId) || ALL_UNITS[0];
 
   const displayedItems = auditItems.filter(item => {
@@ -174,7 +182,7 @@ export default function AuditPage() {
     return matchUnit && matchStatus && matchSearch;
   });
 
-  // Handler Upload Dokumen oleh Auditee
+  // Handler Upload dengan Metadata Lengkap
   const handleSaveUpload = () => {
     if (!uploadedFileName.trim()) {
       toast.error('Pilih atau masukkan nama berkas terlebih dahulu!');
@@ -189,6 +197,8 @@ export default function AuditPage() {
       filename: uploadedFileName
     });
 
+    const nowFormatted = new Date().toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }) + ' WIB';
+
     const newAtt = {
       id: `att-${Date.now()}`,
       name: uploadedFileName,
@@ -198,7 +208,10 @@ export default function AuditPage() {
       r2Key: r2Key,
       url: `https://pub-7edd06e807b546809446e2261c43351f.r2.dev/${r2Key}`,
       notes: newFileNotes,
-      uploadedAt: new Date().toLocaleString('id-ID')
+      uploadedBy: uploaderName || 'Pengurus Unit',
+      uploadedRole: uploaderRole || 'Staff Unit',
+      createdAt: nowFormatted,
+      updatedAt: nowFormatted
     };
 
     const updated = auditItems.map(item => {
@@ -218,7 +231,7 @@ export default function AuditPage() {
     setUploadedFileName('');
     setNewFileTitle('');
     setNewFileNotes('');
-    toast.success('Berkas berhasil disimpan di Cloudflare R2 dan diajukan ke Auditor!', { icon: '📤' });
+    toast.success('Berkas berhasil diunggah dengan metadata lengkap!', { icon: '📤' });
   };
 
   // Handler Keputusan Auditor
@@ -239,7 +252,6 @@ export default function AuditPage() {
     setAuditItems(updated);
     setDecisionModalOpen(false);
 
-    // Kirim notifikasi email ke auditee
     try {
       await fetch('/api/notify', {
         method: 'POST',
@@ -255,7 +267,7 @@ export default function AuditPage() {
           notes: decisionNotes,
         })
       });
-      toast.success(`Status diubah: ${decisionType} & Email notifikasi terkirim!`, { icon: '📧' });
+      toast.success(`Status diubah: ${decisionType} & Notifikasi email terkirim!`, { icon: '📧' });
     } catch {
       toast.success(`Status berhasil diubah: ${decisionType}`);
     }
@@ -279,7 +291,7 @@ export default function AuditPage() {
           </div>
         </div>
 
-        {/* Tab Switcher: Auditee Portal vs Auditor Portal */}
+        {/* Tab Switcher */}
         <div className="flex items-center gap-2 p-1.5 bg-slate-100 rounded-2xl border border-slate-200">
           <button
             onClick={() => setActivePortal('auditee')}
@@ -307,25 +319,25 @@ export default function AuditPage() {
       </div>
 
       {/* Control Bar: Pilihan Unit Auditee & Filter */}
-      <div className="p-4 bg-white rounded-2xl border border-slate-200/80 shadow-xs flex flex-col md:flex-row items-center justify-between gap-4">
+      <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-xs flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
           {activePortal === 'auditee' && (
             <div className="w-full sm:w-80">
               <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-1">
-                Pilih Unit Auditee Anda (165 Unit PDM & KL Lazismu):
+                Pilih Unit Auditee Anda:
               </label>
               <select
                 value={selectedUnitId}
                 onChange={(e) => setSelectedUnitId(Number(e.target.value))}
                 className="w-full text-xs font-semibold bg-emerald-50/50 border border-emerald-300 text-slate-900 rounded-xl px-3 py-2 focus:ring-2 focus:ring-[#055838]"
               >
-                <optgroup label="Amal Usaha Pendidikan (SD & SMP Muhammadiyah)">
+                <optgroup label="Amal Usaha Pendidikan (SD & SMP)">
                   <option value={113}>SD Muhammadiyah Kauman</option>
                   <option value={109}>SD Muhammadiyah Jogokariyan</option>
                   <option value={130}>SD Muhammadiyah Sapen 1</option>
                   <option value={141}>SMP Muhammadiyah 1 Yogyakarta</option>
                 </optgroup>
-                <optgroup label="Pimpinan Cabang (14 PCM)">
+                <optgroup label="14 PCM (Pimpinan Cabang)">
                   <option value={43}>PCM Gondomanan</option>
                   <option value={45}>PCM Kotagede</option>
                   <option value={47}>PCM Mantrijeron</option>
@@ -334,10 +346,6 @@ export default function AuditPage() {
                   <option value={163}>KL Lazismu Gondomanan</option>
                   <option value={165}>KL Lazismu Kotagede</option>
                   <option value={167}>KL Lazismu Mantrijeron</option>
-                </optgroup>
-                <optgroup label="Ranting & Masjid">
-                  <option value={70}>PRM Prawirodirjan</option>
-                  <option value={71}>PRM Ngupasan</option>
                 </optgroup>
               </select>
             </div>
@@ -389,167 +397,171 @@ export default function AuditPage() {
 
       {/* Checklist Audit Cards */}
       <div className="space-y-4">
-        {displayedItems.length === 0 ? (
-          <div className="p-12 text-center bg-white rounded-3xl border border-slate-200">
-            <FolderCheck className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-            <h4 className="text-base font-bold text-slate-700">Tidak ada permintaan berkas</h4>
-            <p className="text-xs text-slate-400 mt-1">Belum ada item pemeriksaan untuk kategori atau filter yang dipilih.</p>
-          </div>
-        ) : (
-          displayedItems.map((item) => (
-            <Card key={item.id} className="rounded-3xl border-slate-200/80 shadow-xs hover:shadow-sm transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
-                  {/* Info Pokok */}
-                  <div className="space-y-2 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-mono text-xs font-bold text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-lg">
-                        {item.id}
-                      </span>
-                      <span className="text-xs font-bold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-lg border border-emerald-200">
-                        {item.category}
-                      </span>
-                      <span className="text-xs font-semibold text-slate-600 flex items-center gap-1">
-                        <Building2 className="w-3.5 h-3.5 text-slate-400" />
-                        {item.unitName}
-                      </span>
-                      <span className="text-xs text-slate-400 flex items-center gap-1">
-                        <Calendar className="w-3.5 h-3.5" />
-                        Batas Waktu: <strong>{item.dueDate}</strong>
-                      </span>
+        {displayedItems.map((item) => (
+          <Card key={item.id} className="rounded-3xl border-slate-200 shadow-xs hover:shadow-sm transition-shadow">
+            <CardContent className="p-6">
+              <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+                <div className="space-y-2 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-mono text-xs font-bold text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-lg">
+                      {item.id}
+                    </span>
+                    <span className="text-xs font-bold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-lg border border-emerald-200">
+                      {item.category}
+                    </span>
+                    <span className="text-xs font-semibold text-slate-600 flex items-center gap-1">
+                      <Building2 className="w-3.5 h-3.5 text-slate-400" />
+                      {item.unitName}
+                    </span>
+                    <span className="text-xs text-slate-400 flex items-center gap-1">
+                      <Calendar className="w-3.5 h-3.5" />
+                      Batas Waktu: <strong>{item.dueDate}</strong>
+                    </span>
+                  </div>
+
+                  <h3 className="text-base font-bold text-slate-900">{item.title}</h3>
+                  <p className="text-xs text-slate-600 leading-relaxed">{item.description}</p>
+
+                  {/* Catatan Revisi dari Auditor jika ada */}
+                  {item.auditorNotes && (
+                    <div className={`p-3 rounded-2xl text-xs border ${
+                      item.status === 'REVISI'
+                        ? 'bg-rose-50/80 border-rose-200 text-rose-900'
+                        : 'bg-emerald-50/80 border-emerald-200 text-emerald-900'
+                    }`}>
+                      <p className="font-bold flex items-center gap-1.5 mb-1">
+                        {item.status === 'REVISI' ? <AlertTriangle className="w-4 h-4 text-rose-600" /> : <CheckCircle2 className="w-4 h-4 text-emerald-600" />}
+                        <span>Catatan Evaluasi Auditor:</span>
+                      </p>
+                      <p>{item.auditorNotes}</p>
                     </div>
+                  )}
 
-                    <h3 className="text-base font-bold text-slate-900">{item.title}</h3>
-                    <p className="text-xs text-slate-600 leading-relaxed">{item.description}</p>
-
-                    {/* Catatan Revisi dari Auditor jika ada */}
-                    {item.auditorNotes && (
-                      <div className={`p-3 rounded-2xl text-xs border ${
-                        item.status === 'REVISI'
-                          ? 'bg-rose-50/80 border-rose-200 text-rose-900'
-                          : 'bg-emerald-50/80 border-emerald-200 text-emerald-900'
-                      }`}>
-                        <p className="font-bold flex items-center gap-1.5 mb-1">
-                          {item.status === 'REVISI' ? <AlertTriangle className="w-4 h-4 text-rose-600" /> : <CheckCircle2 className="w-4 h-4 text-emerald-600" />}
-                          <span>Catatan Evaluasi Auditor:</span>
-                        </p>
-                        <p>{item.auditorNotes}</p>
-                      </div>
-                    )}
-
-                    {/* Catatan dari Auditee */}
-                    {item.auditeeNotes && (
-                      <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700">
-                        <span className="font-semibold text-slate-900">Keterangan Auditee: </span>
-                        <span>"{item.auditeeNotes}"</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Status & Aksi */}
-                  <div className="flex flex-col items-start lg:items-end gap-3 min-w-[200px]">
-                    <StatusBadge status={item.status} />
-
-                    {/* Tombol Khusus Auditee */}
-                    {activePortal === 'auditee' && (
-                      <div className="space-y-2 w-full sm:w-auto">
-                        <Button
-                          size="sm"
-                          variant={item.status === 'REVISI' ? 'destructive' : 'primary'}
-                          leftIcon={<Upload className="w-3.5 h-3.5" />}
-                          onClick={() => {
-                            setSelectedReqForUpload(item);
-                            setUploadModalOpen(true);
-                          }}
-                        >
-                          {item.attachments.length > 0 ? 'Unggah Berkas Baru / Revisi' : 'Unggah Berkas Dokumen'}
-                        </Button>
-                      </div>
-                    )}
-
-                    {/* Tombol Khusus Auditor */}
-                    {activePortal === 'auditor' && (
-                      <div className="flex items-center gap-2">
-                        <Button
-                          size="sm"
-                          variant="primary"
-                          onClick={() => {
-                            setSelectedReqForDecision(item);
-                            setDecisionType('KOMPLIT');
-                            setDecisionModalOpen(true);
-                          }}
-                        >
-                          ✓ Validasi Komplit
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => {
-                            setSelectedReqForDecision(item);
-                            setDecisionType('REVISI');
-                            setDecisionModalOpen(true);
-                          }}
-                        >
-                          ⚠️ Minta Revisi
-                        </Button>
-                      </div>
-                    )}
-                  </div>
+                  {/* Catatan dari Auditee */}
+                  {item.auditeeNotes && (
+                    <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700">
+                      <span className="font-semibold text-slate-900">Keterangan Auditee: </span>
+                      <span>"{item.auditeeNotes}"</span>
+                    </div>
+                  )}
                 </div>
 
-                {/* List Berkas Terunggah di R2 */}
-                {item.attachments.length > 0 && (
-                  <div className="mt-4 pt-4 border-t border-slate-100 space-y-2">
-                    <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                      Berkas Terunggah di Cloudflare R2 ({item.attachments.length} Berkas):
-                    </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                      {item.attachments.map((att) => (
-                        <div key={att.id} className="p-3 bg-slate-50/70 rounded-2xl border border-slate-200/80 flex items-center justify-between text-xs hover:bg-slate-50 transition-colors">
-                          <div className="flex items-center gap-2.5 min-w-0">
-                            <span className="p-1.5 bg-emerald-100 text-[#055838] rounded-xl font-bold text-[10px]">
+                <div className="flex flex-col items-start lg:items-end gap-3 min-w-[200px]">
+                  <StatusBadge status={item.status} />
+
+                  {/* Tombol Khusus Auditee */}
+                  {activePortal === 'auditee' && (
+                    <Button
+                      size="sm"
+                      variant={item.status === 'REVISI' ? 'destructive' : 'primary'}
+                      leftIcon={<Upload className="w-3.5 h-3.5" />}
+                      onClick={() => {
+                        setSelectedReqForUpload(item);
+                        setUploadModalOpen(true);
+                      }}
+                    >
+                      {item.attachments.length > 0 ? 'Unggah Berkas Baru / Revisi' : 'Unggah Berkas Dokumen'}
+                    </Button>
+                  )}
+
+                  {/* Tombol Khusus Auditor */}
+                  {activePortal === 'auditor' && (
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="primary"
+                        onClick={() => {
+                          setSelectedReqForDecision(item);
+                          setDecisionType('KOMPLIT');
+                          setDecisionModalOpen(true);
+                        }}
+                      >
+                        ✓ Validasi Komplit
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => {
+                          setSelectedReqForDecision(item);
+                          setDecisionType('REVISI');
+                          setDecisionModalOpen(true);
+                        }}
+                      >
+                        ⚠️ Minta Revisi
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* List Berkas Terunggah di R2 dengan METADATA DETAIL LENGKAP */}
+              {item.attachments.length > 0 && (
+                <div className="mt-5 pt-4 border-t border-slate-100 space-y-3">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                    Berkas Terunggah di Cloudflare R2 & Riwayat Input ({item.attachments.length} Berkas):
+                  </p>
+                  <div className="grid grid-cols-1 gap-2.5">
+                    {item.attachments.map((att) => (
+                      <div key={att.id} className="p-3.5 bg-slate-50/80 rounded-2xl border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs hover:bg-slate-50 transition-colors">
+                        <div className="space-y-1.5 flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="p-1 px-2 bg-emerald-100 text-[#055838] rounded-lg font-bold text-[10px]">
                               {att.type}
                             </span>
-                            <div className="truncate">
-                              <p className="font-bold text-slate-900 truncate" title={att.displayName}>
-                                {att.displayName}
-                              </p>
-                              <p className="text-[10px] text-slate-400 font-mono truncate">
-                                R2: {att.r2Key}
-                              </p>
-                            </div>
+                            <span className="font-bold text-slate-900 text-xs truncate" title={att.displayName}>
+                              {att.displayName}
+                            </span>
                           </div>
-                          <div className="flex items-center gap-1">
-                            <a
-                              href={att.url}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="p-1.5 text-slate-500 hover:text-[#055838] hover:bg-white rounded-lg transition-colors"
-                              title="Buka Berkas"
-                            >
-                              <ExternalLink className="w-4 h-4" />
-                            </a>
+
+                          <p className="text-[11px] text-slate-500 italic">
+                            Catatan: "{att.notes || 'Tidak ada catatan tambahan'}"
+                          </p>
+
+                          {/* Detail Metadata Pengunggah & Timestamp */}
+                          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px] text-slate-500 pt-1 border-t border-slate-200/60">
+                            <span className="flex items-center gap-1 text-slate-700 font-medium">
+                              <UserCheck className="w-3 h-3 text-emerald-600" />
+                              Diunggah oleh: <strong>{att.uploadedBy}</strong> ({att.uploadedRole})
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Clock className="w-3 h-3 text-slate-400" />
+                              Waktu Input: <strong>{att.createdAt}</strong>
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <CheckCircle className="w-3 h-3 text-blue-500" />
+                              Update: <strong>{att.updatedAt}</strong>
+                            </span>
                           </div>
                         </div>
-                      ))}
-                    </div>
+
+                        <div className="flex items-center gap-2">
+                          <a
+                            href={att.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-slate-200 hover:border-emerald-300 text-[#055838] font-bold text-xs shadow-2xs"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" />
+                            <span>Buka File</span>
+                          </a>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          ))
-        )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
-      {/* ========================================================================= */}
-      {/* MODAL AUDITEE: UNGGAH BERKAS DOKUMEN KE R2 */}
-      {/* ========================================================================= */}
+      {/* MODAL UPLOAD AUDITEE DENGAN FIELD PENGUNGGAH */}
       <Modal
         isOpen={uploadModalOpen}
         onClose={() => setUploadModalOpen(false)}
         size="md"
         title="Pengumpulan Berkas Dokumen (Input Auditee)"
-        description="Unggah file bukti transaksi, laporan keuangan, atau sertifikat legalitas ke Cloudflare R2."
+        description="Data identitas pengunggah dan waktu upload otomatis dicatat di sistem audit."
         footer={
           <>
             <Button variant="outline" onClick={() => setUploadModalOpen(false)}>Batal</Button>
@@ -563,6 +575,19 @@ export default function AuditPage() {
           <div className="p-3 bg-emerald-50 rounded-2xl border border-emerald-200 text-emerald-900">
             <p className="font-bold text-xs">{selectedReqForUpload?.title}</p>
             <p className="text-[11px] text-emerald-700 mt-0.5">Unit: {selectedReqForUpload?.unitName}</p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <Input
+              label="Nama Pengunggah (PIC)"
+              value={uploaderName}
+              onChange={(e) => setUploaderName(e.target.value)}
+            />
+            <Input
+              label="Jabatan / Peran Pengunggah"
+              value={uploaderRole}
+              onChange={(e) => setUploaderRole(e.target.value)}
+            />
           </div>
 
           <div>
@@ -589,7 +614,6 @@ export default function AuditPage() {
             placeholder="Contoh: Rekening Koran BSI Q1 2026 (Stempel Asli)"
             value={newFileTitle}
             onChange={(e) => setNewFileTitle(e.target.value)}
-            helperText="Judul ini yang akan dibaca oleh tim auditor LPPK."
           />
 
           <Textarea
@@ -602,9 +626,7 @@ export default function AuditPage() {
         </div>
       </Modal>
 
-      {/* ========================================================================= */}
-      {/* MODAL AUDITOR: BUAT PERMINTAAN DOKUMEN BARU */}
-      {/* ========================================================================= */}
+      {/* MODAL AUDITOR: BUAT PERMINTAAN BARU */}
       <Modal
         isOpen={createReqModalOpen}
         onClose={() => setCreateReqModalOpen(false)}
@@ -676,33 +698,15 @@ export default function AuditPage() {
 
           <Textarea
             label="Instruksi Rinci untuk Auditee"
-            placeholder="Jelaskan secara spesifik format berkas, tanda tangan yang dibutuhkan, dan batas periode transaksi..."
+            placeholder="Jelaskan secara spesifik format berkas yang diminta..."
             value={newReqDesc}
             onChange={(e) => setNewReqDesc(e.target.value)}
             rows={3}
           />
-
-          <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 flex items-start gap-2.5">
-            <input
-              id="chkSaveTpl"
-              type="checkbox"
-              checked={saveToMasterTemplate}
-              onChange={(e) => setSaveToMasterTemplate(e.target.checked)}
-              className="w-4 h-4 mt-0.5 rounded text-[#055838] focus:ring-[#055838]"
-            />
-            <label htmlFor="chkSaveTpl" className="text-xs text-emerald-900 cursor-pointer">
-              <strong>Simpan poin baru ini ke dalam Master Template Audit</strong>
-              <p className="text-emerald-700 text-[11px] mt-0.5">
-                Otomatis menjadi standar pemeriksaan berikutnya untuk kategori unit sejenis.
-              </p>
-            </label>
-          </div>
         </div>
       </Modal>
 
-      {/* ========================================================================= */}
-      {/* MODAL AUDITOR: EVALUASI KEPUTUSAN & CATATAN REVISI */}
-      {/* ========================================================================= */}
+      {/* MODAL AUDITOR KEPUTUSAN */}
       <Modal
         isOpen={decisionModalOpen}
         onClose={() => setDecisionModalOpen(false)}
@@ -728,7 +732,7 @@ export default function AuditPage() {
 
           <Textarea
             label={decisionType === 'KOMPLIT' ? 'Catatan Apresiasi / Pengesahan Auditor' : 'Poin Catatan Revisi yang Wajib Diperbaiki'}
-            placeholder={decisionType === 'KOMPLIT' ? 'Dokumen telah diverifikasi sah dan sesuai standar laporan keuangan.' : 'Jelaskan kekurangan berkas, misal: Stempel basah belum tertera pada kwitansi nomor 12...'}
+            placeholder={decisionType === 'KOMPLIT' ? 'Dokumen telah diverifikasi sah dan sesuai standar laporan keuangan.' : 'Jelaskan kekurangan berkas, misal: Stempel basah belum tertera pada kwitansi...'}
             value={decisionNotes}
             onChange={(e) => setDecisionNotes(e.target.value)}
             rows={4}

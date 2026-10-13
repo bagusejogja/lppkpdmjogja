@@ -42,7 +42,7 @@ export default function DashboardPage() {
   const processDocs = MOCK_DOCUMENT_REQUESTS.filter(d => d.status === 'DALAM_PROSES' || d.status === 'DISUBMIT').length;
   const revisiDocs = MOCK_DOCUMENT_REQUESTS.filter(d => d.status === 'REVISI').length;
 
-  const totalSpjNominal = MOCK_SPJS.reduce((acc, curr) => acc + curr.total_nominal, 0);
+  const totalSpjNominal = MOCK_SPJS.reduce((acc: number, curr: any) => acc + (curr.total_nominal || 0), 0);
 
   // Data Pie Chart Persentase Dokumen Audit
   const pieData = [
@@ -257,7 +257,7 @@ export default function DashboardPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {MOCK_DOCUMENT_REQUESTS.map((doc) => (
+                {MOCK_DOCUMENT_REQUESTS.map((doc: any) => (
                   <tr key={doc.id} className="hover:bg-slate-50/70">
                     <td className="px-4 py-3 font-semibold text-gray-900">
                       {doc.organization?.name}

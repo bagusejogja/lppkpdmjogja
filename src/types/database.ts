@@ -41,6 +41,28 @@ export type SopCategory =
   | 'ASET'
   | 'ORGANISASI';
 
+export interface UserGroupMembership {
+  groupId: string;
+  groupName: string;
+  role: UserRole;
+  isDefault?: boolean;
+}
+
+export interface User {
+  id: string;
+  organization_id: string;
+  email: string;
+  full_name: string;
+  role: UserRole;
+  phone?: string | null;
+  avatar_url?: string | null;
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
+  groups?: UserGroupMembership[]; // Dukungan Multi-Group
+  organization?: Organization;
+}
+
 export interface Organization {
   id: string;
   name: string;
@@ -56,37 +78,64 @@ export interface Organization {
   updated_at?: string;
 }
 
-export interface User {
+export interface RequestAttachment {
+  id: string;
+  request_id: string;
+  file_key: string;
+  file_url: string;
+  original_name: string;
+  display_name: string;
+  file_size: number;
+  file_type?: string | null;
+  notes?: string | null;
+  uploaded_by: string;
+  uploaded_by_name?: string; // Siapa yang upload
+  uploaded_by_role?: string; // Jabatan pengunggah
+  created_at: string;        // Kapan diinput
+  updated_at?: string;       // Kapan terakhir diupdate
+  version?: string | null;          // Versi revisi file
+}
+
+export interface DocumentRequest {
   id: string;
   organization_id: string;
-  email: string;
-  full_name: string;
-  role: UserRole;
-  phone?: string | null;
-  avatar_url?: string | null;
-  is_active?: boolean;
+  auditor_id: string;
+  periode_audit: string;
+  title: string;
+  description_html: string;
+  category: string;
+  is_saved_to_master_template: boolean;
+  status: RequestStatus;
+  auditee_response_notes?: string | null;
+  rejection_notes?: string | null;
+  due_date?: string | null;
+  submitted_at?: string | null;
+  verified_at?: string | null;
   created_at?: string;
   updated_at?: string;
   organization?: Organization;
+  auditor?: User;
+  attachments?: RequestAttachment[];
 }
 
-export interface ApprovalStep {
+export interface AuditTemplateItem {
   id: string;
-  config_id: string;
-  level_number: number;
-  level_name: string;
-  required_role: UserRole;
-  assigned_user_id?: string | null;
-  assigned_user?: User | null;
+  title: string;
+  category: string;
+  is_mandatory: boolean;
+  description?: string;
 }
 
-export interface ApprovalConfig {
+export interface AuditTemplate {
   id: string;
-  organization_id: string;
   name: string;
-  total_levels: number;
+  target_org_type: string;
+  description?: string | null;
+  default_items: AuditTemplateItem[];
   is_active: boolean;
-  steps?: ApprovalStep[];
+  created_by?: string | null;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface SpjAttachment {
@@ -100,7 +149,9 @@ export interface SpjAttachment {
   file_type?: string | null;
   notes?: string | null;
   uploaded_by: string;
-  created_at?: string;
+  uploaded_by_name?: string;
+  created_at: string;
+  updated_at?: string;
 }
 
 export interface SpjApprovalHistory {
@@ -138,61 +189,6 @@ export interface Spj {
   approvals?: SpjApprovalHistory[];
 }
 
-export interface AuditTemplateItem {
-  id: string;
-  title: string;
-  category: string;
-  is_mandatory: boolean;
-  notes?: string;
-}
-
-export interface AuditTemplate {
-  id: string;
-  name: string;
-  target_org_type: OrgType;
-  description?: string | null;
-  default_items: AuditTemplateItem[];
-  is_active: boolean;
-  created_by?: string | null;
-  created_at?: string;
-}
-
-export interface RequestAttachment {
-  id: string;
-  request_id: string;
-  file_key: string;
-  file_url: string;
-  original_name: string;
-  display_name: string;
-  file_size: number;
-  file_type?: string | null;
-  notes?: string | null;
-  uploaded_by: string;
-  created_at?: string;
-}
-
-export interface DocumentRequest {
-  id: string;
-  organization_id: string;
-  auditor_id: string;
-  periode_audit: string;
-  title: string;
-  description_html: string;
-  category: string;
-  is_saved_to_master_template: boolean;
-  status: RequestStatus;
-  auditee_response_notes?: string | null;
-  rejection_notes?: string | null;
-  due_date?: string | null;
-  submitted_at?: string | null;
-  verified_at?: string | null;
-  created_at?: string;
-  updated_at?: string;
-  organization?: Organization;
-  auditor?: User;
-  attachments?: RequestAttachment[];
-}
-
 export interface Sop {
   id: string;
   title: string;
@@ -206,16 +202,4 @@ export interface Sop {
   published_date: string;
   created_by?: string | null;
   created_at?: string;
-}
-
-export interface AuditLog {
-  id: string;
-  user_id?: string | null;
-  action: string;
-  entity_type: string;
-  entity_id?: string | null;
-  details?: Record<string, any>;
-  ip_address?: string | null;
-  created_at?: string;
-  user?: User | null;
 }

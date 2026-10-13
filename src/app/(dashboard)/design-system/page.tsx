@@ -29,7 +29,17 @@ import {
   RotateCw,
   Sparkles,
   ExternalLink,
-  ChevronLeft
+  ChevronLeft,
+  Table as TableIcon,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  AlignJustify,
+  ListOrdered,
+  Maximize2,
+  Minimize2,
+  TrendingUp,
+  Layers
 } from 'lucide-react';
 import { 
   ResponsiveContainer, 
@@ -37,6 +47,8 @@ import {
   Line, 
   BarChart, 
   Bar, 
+  AreaChart,
+  Area,
   XAxis, 
   YAxis, 
   CartesianGrid, 
@@ -48,7 +60,7 @@ import {
 } from 'recharts';
 import toast from 'react-hot-toast';
 
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/Card';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge, StatusBadge, RoleBadge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
@@ -66,42 +78,78 @@ export default function DesignSystemPage() {
 
   // 2. Upload Textbox State
   const [uploadFiles, setUploadFiles] = useState([
-    { name: 'Rekening_Koran_BSI_Q1.pdf', size: '2.4 MB', type: 'PDF', progress: 100 },
-    { name: 'Kwitansi_Renovasi_Masjid.jpg', size: '1.2 MB', type: 'IMAGE', progress: 100 },
+    { name: 'Rekening_Koran_BSI_Q1.pdf', size: '2.4 MB', type: 'PDF' },
+    { name: 'Kwitansi_Renovasi_Masjid.jpg', size: '1.2 MB', type: 'IMAGE' },
   ]);
 
-  // 3. Hierarchical Tree View State (Expand/Collapse)
+  // 3. Hierarchical Tree View State (Tombol Expand/Collapse Per Jenjang & Global)
   const [treeExpanded, setTreeExpanded] = useState<Record<string, boolean>>({
     '1': true,
-    '24': true,
-    '28': true,
-    '43': true,
+    'lvl-2': true,
+    'pcm': true,
+    'gondomanan': true,
+    'lazismu': true,
   });
 
-  const toggleTree = (id: string) => {
-    setTreeExpanded(prev => ({ ...prev, [id]: !prev[id] }));
+  const toggleAllTree = (expand: boolean) => {
+    setTreeExpanded({
+      '1': expand,
+      'lvl-2': expand,
+      'pcm': expand,
+      'gondomanan': expand,
+      'lazismu': expand,
+    });
+    toast.success(expand ? 'Semua jenjang dibuka!' : 'Semua jenjang ditutup!');
   };
 
-  // 4. Tab Menu Editor State (Rich Text WYSIWYG)
+  const toggleTree = (key: string) => {
+    setTreeExpanded(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  // 4. Tab Menu Editor (WYSIWYG Rich Text dengan Tabel, Align, Numbering)
   const [editorText, setEditorText] = useState('<p>Berdasarkan hasil pemeriksaan audit kepatuhan, seluruh berkas transaksi <strong>wajib dilengkapi kwitansi asli</strong> dan stempel basah.</p>');
   const [activeEditorTab, setActiveEditorTab] = useState<'visual' | 'html' | 'preview'>('visual');
+  const [textAlign, setTextAlign] = useState<'left' | 'center' | 'right' | 'justify'>('left');
 
   // 5. Document & Photo View Modal State
   const [previewModal, setPreviewModal] = useState<{ isOpen: boolean; type: 'pdf' | 'image'; title: string; url: string } | null>(null);
 
-  // 6. Single Row Accordion Child Rows State
-  const [expandedRow, setExpandedRow] = useState<string | null>('row-1');
+  // 6. Single Row Accordion Child Rows (>2 Anak & Buka/Tutup Semua)
+  const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({
+    'row-1': true,
+    'row-2': false,
+  });
 
-  // 7. Modal Alert State
+  const toggleAllRows = (expand: boolean) => {
+    setExpandedRows({
+      'row-1': expand,
+      'row-2': expand,
+    });
+  };
+
+  // 7. Pivot Matriks Bulanan (Januari - Desember 2026)
+  const [pivotFilterYear, setPivotFilterYear] = useState('2026');
+
+  // Modal Alert State
   const [alertModalOpen, setAlertModalOpen] = useState(false);
   const [alertType, setAlertType] = useState<'danger' | 'warning' | 'success'>('danger');
 
-  // Charts Sample Data
+  // Charts Sample Data (Trend, Area Realisasi, Komparasi PCM)
   const trendData = [
-    { bulan: 'Jan', komplit: 12, proses: 8, revisi: 3 },
-    { bulan: 'Feb', komplit: 18, proses: 10, revisi: 2 },
-    { bulan: 'Mar', komplit: 25, proses: 12, revisi: 5 },
-    { bulan: 'Apr', komplit: 34, proses: 9, revisi: 4 },
+    { bulan: 'Jan', komplit: 12, target: 15, nominal: 45 },
+    { bulan: 'Feb', komplit: 18, target: 20, nominal: 68 },
+    { bulan: 'Mar', komplit: 25, target: 25, nominal: 92 },
+    { bulan: 'Apr', komplit: 34, target: 30, nominal: 135 },
+    { bulan: 'Mei', komplit: 42, target: 40, nominal: 180 },
+    { bulan: 'Jun', komplit: 56, target: 50, nominal: 240 },
+  ];
+
+  const pcmBarData = [
+    { pcm: 'Gondomanan', komplit: 14, proses: 3 },
+    { pcm: 'Kotagede', komplit: 18, proses: 4 },
+    { pcm: 'Umbulharjo', komplit: 16, proses: 5 },
+    { pcm: 'Mantrijeron', komplit: 12, proses: 2 },
+    { pcm: 'Wirobrajan', komplit: 15, proses: 3 },
   ];
 
   const pieData = [
@@ -118,21 +166,16 @@ export default function DesignSystemPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <div className="flex items-center gap-2.5">
-              <span className="p-2.5 bg-emerald-100 text-[#055838] rounded-2xl font-bold shadow-sm">
+              <span className="p-2.5 bg-emerald-100 text-[#055838] rounded-2xl font-bold shadow-xs">
                 <Palette className="w-5 h-5" />
               </span>
               <div>
                 <h1 className="text-2xl font-black text-slate-900 tracking-tight">Master UI Component Guide & Showcase</h1>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Koleksi lengkap 10 komponen UI aplikasi LPPK PDM Kota Yogyakarta sesuai standar visual modern & soft.
+                  Standar visual tipografi, grafik, pohon hierarki berjenjang, tabel accordion, dan pivot matriks bulanan.
                 </p>
               </div>
             </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs bg-emerald-50 text-[#055838] font-mono px-3 py-1.5 rounded-xl border border-emerald-200 font-bold">
-              10 Modul Komponen Siap Pakai
-            </span>
           </div>
         </div>
       </div>
@@ -142,12 +185,12 @@ export default function DesignSystemPage() {
         {[
           { id: 'all', label: 'Semua Komponen' },
           { id: 'inputs', label: '1 & 2. Datepicker & Upload' },
-          { id: 'tree', label: '3. Hierarchical Tree' },
-          { id: 'charts', label: '4. Visualisasi Grafik' },
-          { id: 'editor', label: '5. Tab Menu Editor' },
+          { id: 'tree', label: '3. Hierarchical Tree (Buka/Tutup)' },
+          { id: 'charts', label: '4. Visualisasi Grafik Recharts' },
+          { id: 'editor', label: '5. Tab Menu Editor (+Tabel & Numbering)' },
           { id: 'preview', label: '6. Viewer Dokumen & Foto' },
-          { id: 'accordion', label: '7. Accordion Child Rows' },
-          { id: 'pivot', label: '8. Pivot Matriks' },
+          { id: 'accordion', label: '7. Accordion (>2 Anak Berkas)' },
+          { id: 'pivot', label: '8. Pivot Matriks Bulanan (Jan-Des)' },
           { id: 'actions', label: '9. Standar Kolom Aksi' },
           { id: 'modal_alert', label: '10. Modal Alert Dialog' },
         ].map((tab) => (
@@ -166,116 +209,51 @@ export default function DesignSystemPage() {
       </div>
 
       {/* ========================================================================= */}
-      {/* 1 & 2. DATEPICKER & TEXTBOX UNTUK UPLOAD */}
-      {/* ========================================================================= */}
-      {(activeSection === 'all' || activeSection === 'inputs') && (
-        <Card className="rounded-2xl border-slate-200/90 shadow-sm">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-[#055838]" />
-                <span>1. Datepicker & 2. Textbox Upload Berkas</span>
-              </CardTitle>
-              <span className="text-[11px] font-mono bg-slate-100 text-slate-700 px-2.5 py-1 rounded-lg">#Date #Upload #DragDrop</span>
-            </div>
-            <CardDescription>
-              Pemilihan rentang periode audit serta komponen drag & drop upload berkas dengan progress & format indicator.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Datepicker Demo */}
-              <div className="p-4 bg-slate-50/70 rounded-2xl border border-slate-200/70 space-y-4">
-                <p className="text-xs font-bold text-slate-700 uppercase tracking-wider">Demo Datepicker (Tanggal Tunggal & Rentang):</p>
-                <div className="space-y-3">
-                  <Input
-                    label="Pilih Tanggal Audit Tunggal"
-                    type="date"
-                    value={singleDate}
-                    onChange={(e) => setSingleDate(e.target.value)}
-                    helperText="Format tanggal Indonesia: 13 April 2026"
-                  />
-                  <div className="grid grid-cols-2 gap-2">
-                    <Input
-                      label="Rentang Awal (Dari)"
-                      type="date"
-                      value={startDate}
-                      onChange={(e) => setStartDate(e.target.value)}
-                    />
-                    <Input
-                      label="Rentang Akhir (Sampai)"
-                      type="date"
-                      value={endDate}
-                      onChange={(e) => setEndDate(e.target.value)}
-                    />
-                  </div>
-                  <div className="p-2.5 bg-emerald-50 rounded-xl text-[11px] text-emerald-800 font-medium">
-                    📅 Periode Terpilih: <strong>{startDate}</strong> s/d <strong>{endDate}</strong>
-                  </div>
-                </div>
-              </div>
-
-              {/* Upload Textbox Demo */}
-              <div className="p-4 bg-slate-50/70 rounded-2xl border border-slate-200/70 space-y-3">
-                <p className="text-xs font-bold text-slate-700 uppercase tracking-wider">Demo Textbox Drag & Drop Upload:</p>
-                
-                {/* Drag Drop Area */}
-                <div className="p-6 border-2 border-dashed border-emerald-600/40 hover:border-emerald-700 rounded-2xl bg-white text-center cursor-pointer transition-all group">
-                  <UploadCloud className="w-8 h-8 text-emerald-600 mx-auto mb-2 group-hover:scale-110 transition-transform" />
-                  <p className="text-xs font-bold text-slate-800">Klik untuk jelajahi file atau geser & lepas ke sini</p>
-                  <p className="text-[11px] text-slate-400 mt-1">Mendukung: PDF, Word (.docx), Excel (.xlsx), Foto (.jpg, .png) max 25MB</p>
-                </div>
-
-                {/* File chips */}
-                <div className="space-y-2 mt-3">
-                  {uploadFiles.map((f, i) => (
-                    <div key={i} className="p-2.5 bg-white rounded-xl border border-slate-200 flex items-center justify-between text-xs shadow-xs">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="p-1.5 bg-emerald-50 text-[#055838] rounded-lg font-bold text-[10px]">
-                          {f.type}
-                        </span>
-                        <div className="truncate">
-                          <p className="font-semibold text-slate-800 truncate">{f.name}</p>
-                          <p className="text-[10px] text-slate-400">{f.size} • 100% Selesai di R2</p>
-                        </div>
-                      </div>
-                      <button 
-                        onClick={() => toast.success('File ' + f.name + ' dihapus')}
-                        className="text-slate-400 hover:text-rose-600 p-1 rounded-lg"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* ========================================================================= */}
-      {/* 3. HIERARCHICAL TREE VIEW */}
+      {/* 3. HIERARCHICAL TREE VIEW: BUKA/TUTUP PER JENJANG & GLOBAL */}
       {/* ========================================================================= */}
       {(activeSection === 'all' || activeSection === 'tree') && (
         <Card className="rounded-2xl border-slate-200/90 shadow-sm">
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base flex items-center gap-2">
-                <FolderTree className="w-5 h-5 text-[#055838]" />
-                <span>3. Hierarchical Tree View (Struktur Organisasi PDM Yogyakarta)</span>
-              </CardTitle>
-              <span className="text-[11px] font-mono bg-slate-100 text-slate-700 px-2.5 py-1 rounded-lg">#TreeView #Hierarki</span>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <FolderTree className="w-5 h-5 text-[#055838]" />
+                  <span>3. Hierarchical Tree View (Struktur Organisasi PDM Yogyakarta)</span>
+                </CardTitle>
+                <CardDescription>
+                  Dilengkapi tombol buka/tutup per jenjang dan kontrol global Expand All / Collapse All.
+                </CardDescription>
+              </div>
+
+              {/* Tombol Kontrol Buka/Tutup */}
+              <div className="flex items-center gap-2">
+                <Button size="sm" variant="outline" leftIcon={<Maximize2 className="w-3.5 h-3.5" />} onClick={() => toggleAllTree(true)}>
+                  Buka Semua Jenjang
+                </Button>
+                <Button size="sm" variant="outline" leftIcon={<Minimize2 className="w-3.5 h-3.5" />} onClick={() => toggleAllTree(false)}>
+                  Tutup Semua Jenjang
+                </Button>
+              </div>
             </div>
-            <CardDescription>
-              Navigasi struktur pohon berjenjang interaktif dari PDM Pusat &rarr; Cabang (PCM) &rarr; Ranting (PRM) &rarr; AUM & KL Lazismu.
-            </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="p-4 bg-slate-50/80 rounded-2xl border border-slate-200 font-sans text-xs space-y-2">
-              
+            {/* Tombol Navigasi Filter Per Jenjang */}
+            <div className="flex flex-wrap gap-2 mb-4 p-2 bg-slate-100 rounded-xl text-xs font-semibold">
+              <span className="text-[11px] text-slate-500 self-center px-1 font-bold">Akses Cepat Jenjang:</span>
+              <button onClick={() => toggleTree('1')} className="px-2.5 py-1 bg-white hover:bg-slate-50 rounded-lg border text-emerald-800">
+                Jenjang Level 1 (PDM) {treeExpanded['1'] ? '▼' : '►'}
+              </button>
+              <button onClick={() => toggleTree('pcm')} className="px-2.5 py-1 bg-white hover:bg-slate-50 rounded-lg border text-amber-800">
+                Jenjang Level 2 (14 PCM) {treeExpanded['pcm'] ? '▼' : '►'}
+              </button>
+              <button onClick={() => toggleTree('lazismu')} className="px-2.5 py-1 bg-white hover:bg-slate-50 rounded-lg border text-blue-800">
+                Jenjang KL Lazismu Kecamatan {treeExpanded['lazismu'] ? '▼' : '►'}
+              </button>
+            </div>
+
+            <div className="p-4 bg-slate-50/80 rounded-2xl border border-slate-200 font-sans text-xs space-y-2.5">
               {/* Level 1: PDM */}
-              <div className="border border-emerald-200 bg-white rounded-xl p-3 shadow-xs">
+              <div className="border border-emerald-300 bg-white rounded-xl p-3 shadow-2xs">
                 <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleTree('1')}>
                   <div className="flex items-center gap-2">
                     {treeExpanded['1'] ? <ChevronDown className="w-4 h-4 text-[#055838]" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}
@@ -285,73 +263,86 @@ export default function DesignSystemPage() {
                   <span className="text-[11px] font-mono text-slate-400">Kode: PDM-YK</span>
                 </div>
 
-                {/* Child Level 2 */}
                 {treeExpanded['1'] && (
-                  <div className="mt-3 pl-6 border-l-2 border-emerald-500/30 space-y-2.5">
+                  <div className="mt-3 pl-6 border-l-2 border-emerald-500/40 space-y-2.5">
                     
-                    {/* Unsur Pembantu Pimpinan (Majelis & Lembaga) */}
+                    {/* Unsur Pembantu Pimpinan */}
                     <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200">
                       <div className="flex items-center justify-between">
-                        <span className="font-semibold text-slate-800">Unsur Pembantu Pimpinan (22 Majelis & Lembaga)</span>
+                        <span className="font-semibold text-slate-800">Unsur Pembantu Pimpinan (Majelis & Lembaga)</span>
                         <span className="text-[10px] bg-slate-200 text-slate-700 px-2 py-0.5 rounded font-bold">22 Unit</span>
                       </div>
-                      <p className="text-[11px] text-slate-500 mt-0.5">LPPK, Dikdasmen, Lazismu, MPKU, MTT, LPCRPM, dll.</p>
+                      <p className="text-[11px] text-slate-500 mt-0.5">LPPK, Dikdasmen & PNF, Lazismu, MPKU, LPCRPM, dll.</p>
                     </div>
 
                     {/* Cabang (PCM) */}
                     <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200">
-                      <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleTree('28')}>
+                      <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleTree('pcm')}>
                         <div className="flex items-center gap-2">
-                          {treeExpanded['28'] ? <ChevronDown className="w-3.5 h-3.5 text-emerald-700" /> : <ChevronRight className="w-3.5 h-3.5 text-slate-400" />}
+                          {treeExpanded['pcm'] ? <ChevronDown className="w-3.5 h-3.5 text-amber-700" /> : <ChevronRight className="w-3.5 h-3.5 text-slate-400" />}
                           <span className="font-semibold text-slate-800">14 Pimpinan Cabang Muhammadiyah (PCM) Se-Kota Yogyakarta</span>
                         </div>
-                        <Badge variant="warning">14 PCM</Badge>
+                        <Badge variant="warning">14 Cabang</Badge>
                       </div>
 
-                      {/* Detail PCM Gondomanan */}
-                      {treeExpanded['28'] && (
-                        <div className="mt-2 pl-5 border-l-2 border-amber-400/40 space-y-1.5 text-[11px]">
-                          <div className="p-2 bg-white rounded-lg border border-slate-200 flex items-center justify-between">
-                            <span className="font-bold text-slate-900">PCM Gondomanan</span>
-                            <span className="text-slate-400">Kantor: Kauman, Gondomanan</span>
-                          </div>
+                      {treeExpanded['pcm'] && (
+                        <div className="mt-2 pl-5 border-l-2 border-amber-400/40 space-y-2 text-[11px]">
+                          {/* PCM Gondomanan */}
+                          <div className="p-2 bg-white rounded-lg border border-slate-200">
+                            <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleTree('gondomanan')}>
+                              <span className="font-bold text-slate-900">PCM Gondomanan</span>
+                              <span className="text-slate-400">{treeExpanded['gondomanan'] ? 'Tutup Ranting' : 'Buka Ranting'}</span>
+                            </div>
 
-                          {/* Sub PRM di bawah Gondomanan */}
-                          <div className="pl-4 space-y-1 text-slate-600">
-                            <div className="flex items-center justify-between py-1 border-b border-slate-100">
-                              <span>• PRM Kauman (Masjid Gedhe Kauman)</span>
-                              <span className="text-[10px] text-emerald-700 font-semibold">Aktif Audit</span>
-                            </div>
-                            <div className="flex items-center justify-between py-1 border-b border-slate-100">
-                              <span>• PRM Ngupasan & PRM Prawirodirjan</span>
-                              <span className="text-[10px] text-slate-400">Ranting</span>
-                            </div>
-                            <div className="flex items-center justify-between py-1 text-amber-800 font-medium">
-                              <span>• Kantor Layanan (KL) Lazismu Gondomanan</span>
-                              <span className="text-[10px] bg-amber-100 px-1.5 py-0.5 rounded">KL Lazismu</span>
-                            </div>
+                            {treeExpanded['gondomanan'] && (
+                              <div className="pl-4 mt-2 space-y-1.5 border-t border-slate-100 pt-2 text-slate-600">
+                                <div className="flex items-center justify-between">
+                                  <span>• PRM Kauman (Masjid Gedhe Kauman)</span>
+                                  <span className="text-emerald-700 font-bold">Auditee Aktif</span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                  <span>• PRM Ngupasan & PRM Prawirodirjan</span>
+                                  <span className="text-slate-400">Ranting</span>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         </div>
                       )}
                     </div>
 
-                    {/* AUM Pendidikan & Kesehatan */}
-                    <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
-                      <span className="font-semibold text-slate-800">Amal Usaha Muhammadiyah (37 SD, 10 SMP, SMA Muhi, PKU Kotagede)</span>
-                      <span className="text-[10px] bg-emerald-100 text-[#055838] px-2 py-0.5 rounded font-bold">49 AUM</span>
+                    {/* 14 KL Lazismu Kecamatan */}
+                    <div className="p-2.5 bg-blue-50/60 rounded-xl border border-blue-200">
+                      <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleTree('lazismu')}>
+                        <div className="flex items-center gap-2">
+                          {treeExpanded['lazismu'] ? <ChevronDown className="w-3.5 h-3.5 text-blue-700" /> : <ChevronRight className="w-3.5 h-3.5 text-slate-400" />}
+                          <span className="font-semibold text-blue-950">14 Kantor Layanan (KL) Lazismu Tingkat Kecamatan</span>
+                        </div>
+                        <span className="text-[10px] bg-blue-100 text-blue-800 font-bold px-2 py-0.5 rounded">14 KL Lazismu</span>
+                      </div>
+
+                      {treeExpanded['lazismu'] && (
+                        <div className="mt-2 pl-5 grid grid-cols-2 sm:grid-cols-3 gap-1.5 text-[11px] pt-1 border-t border-blue-200/60">
+                          <span>• KL Lazismu Danurejan</span>
+                          <span>• KL Lazismu Gedongtengen</span>
+                          <span>• KL Lazismu Gondomanan</span>
+                          <span>• KL Lazismu Kotagede</span>
+                          <span>• KL Lazismu Mantrijeron</span>
+                          <span>• KL Lazismu Umbulharjo</span>
+                        </div>
+                      )}
                     </div>
 
                   </div>
                 )}
               </div>
-
             </div>
           </CardContent>
         </Card>
       )}
 
       {/* ========================================================================= */}
-      {/* 4. VISUALISASI GRAFIK INTERAKTIF */}
+      {/* 4. VISUALISASI GRAFIK LENGKAP: LINE, AREA REALISASI, & MULTI-BAR */}
       {/* ========================================================================= */}
       {(activeSection === 'all' || activeSection === 'charts') && (
         <Card className="rounded-2xl border-slate-200/90 shadow-sm">
@@ -359,49 +350,56 @@ export default function DesignSystemPage() {
             <div className="flex items-center justify-between">
               <CardTitle className="text-base flex items-center gap-2">
                 <BarChart3 className="w-5 h-5 text-[#055838]" />
-                <span>4. Visualisasi Grafik (Recharts Trend & Distribusi Kepatuhan)</span>
+                <span>4. Visualisasi Grafik (Recharts Area Realisasi, Line Trend, & Multi-Bar)</span>
               </CardTitle>
-              <span className="text-[11px] font-mono bg-slate-100 text-slate-700 px-2.5 py-1 rounded-lg">#Recharts #Donut #LineChart</span>
+              <span className="text-[11px] font-mono bg-slate-100 text-slate-700 px-2.5 py-1 rounded-lg">#AreaChart #MultiBar #Recharts</span>
             </div>
             <CardDescription>
-              Grafik analitik interaktif pemenuhan audit berkas bulanan dan rasio status dokumen.
+              Penambahan grafik Area Chart untuk realisasi anggaran dan Multi-Bar Chart evaluasi kepatuhan antar-PCM.
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              {/* Line Chart Trend Bulanan */}
+              {/* Area Chart: Akumulasi Realisasi Nominal SPJ */}
               <div className="lg:col-span-7 bg-slate-50/70 p-4 rounded-2xl border border-slate-200/70">
-                <p className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Tren Penyelesaian Audit per Bulan:</p>
+                <p className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                  Realisasi Anggaran SPJ Terverifikasi (Juta Rp):
+                </p>
                 <div className="h-56 w-full">
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={trendData}>
+                    <AreaChart data={trendData}>
+                      <defs>
+                        <linearGradient id="colorNominal" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#055838" stopOpacity={0.4}/>
+                          <stop offset="95%" stopColor="#055838" stopOpacity={0.0}/>
+                        </linearGradient>
+                      </defs>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                       <XAxis dataKey="bulan" tick={{ fontSize: 11 }} />
-                      <YAxis tick={{ fontSize: 11 }} />
-                      <Tooltip />
-                      <Legend verticalAlign="top" height={30} iconType="circle" />
-                      <Line type="monotone" dataKey="komplit" name="Komplit" stroke="#055838" strokeWidth={2.5} />
-                      <Line type="monotone" dataKey="proses" name="Dalam Proses" stroke="#d97706" strokeWidth={2} />
-                      <Line type="monotone" dataKey="revisi" name="Revisi" stroke="#dc2626" strokeWidth={2} strokeDasharray="3 3" />
-                    </LineChart>
+                      <YAxis tick={{ fontSize: 11 }} unit=" jt" />
+                      <Tooltip formatter={(val) => `Rp ${val} Juta`} />
+                      <Area type="monotone" dataKey="nominal" name="Nominal SPJ" stroke="#055838" strokeWidth={2.5} fillOpacity={1} fill="url(#colorNominal)" />
+                    </AreaChart>
                   </ResponsiveContainer>
                 </div>
               </div>
 
-              {/* Donut Chart */}
-              <div className="lg:col-span-5 bg-slate-50/70 p-4 rounded-2xl border border-slate-200/70 flex flex-col justify-between">
-                <p className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Rasio Status Dokumen Terkini:</p>
-                <div className="h-52 w-full">
+              {/* Multi-Bar Chart Komparasi Antar-Cabang */}
+              <div className="lg:col-span-5 bg-slate-50/70 p-4 rounded-2xl border border-slate-200/70">
+                <p className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                  Komparasi Audit 5 PCM Terbesar:
+                </p>
+                <div className="h-56 w-full">
                   <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie data={pieData} cx="50%" cy="50%" innerRadius={45} outerRadius={70} dataKey="value">
-                        {pieData.map((e, idx) => (
-                          <Cell key={idx} fill={e.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip formatter={(val) => `${val}%`} />
-                      <Legend verticalAlign="bottom" height={36} iconType="circle" />
-                    </PieChart>
+                    <BarChart data={pcmBarData}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                      <XAxis dataKey="pcm" tick={{ fontSize: 10 }} />
+                      <YAxis tick={{ fontSize: 10 }} />
+                      <Tooltip />
+                      <Legend verticalAlign="top" height={30} iconType="circle" />
+                      <Bar dataKey="komplit" name="Komplit" fill="#055838" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="proses" name="Proses" fill="#d97706" radius={[4, 4, 0, 0]} />
+                    </BarChart>
                   </ResponsiveContainer>
                 </div>
               </div>
@@ -411,7 +409,7 @@ export default function DesignSystemPage() {
       )}
 
       {/* ========================================================================= */}
-      {/* 5. TAB MENU EDITOR (WYSIWYG RICH TEXT) */}
+      {/* 5. TAB MENU EDITOR: +TABEL, NUMBERING, SETTING PARAGRAF */}
       {/* ========================================================================= */}
       {(activeSection === 'all' || activeSection === 'editor') && (
         <Card className="rounded-2xl border-slate-200/90 shadow-sm">
@@ -419,55 +417,69 @@ export default function DesignSystemPage() {
             <div className="flex items-center justify-between">
               <CardTitle className="text-base flex items-center gap-2">
                 <Edit3 className="w-5 h-5 text-[#055838]" />
-                <span>5. Tab Menu Editor (WYSIWYG Rich Text Toolbar)</span>
+                <span>5. Tab Menu Editor (WYSIWYG: +Tabel, Numbering, & Alignment)</span>
               </CardTitle>
-              <span className="text-[11px] font-mono bg-slate-100 text-slate-700 px-2.5 py-1 rounded-lg">#Editor #WYSIWYG</span>
+              <span className="text-[11px] font-mono bg-slate-100 text-slate-700 px-2.5 py-1 rounded-lg">#TableEditor #Numbering #Align</span>
             </div>
             <CardDescription>
-              Toolbar pengedit catatan audit dengan mode Visual, Source HTML, dan Live Preview.
+              Penambahan tombol sisipkan tabel format audit, penomoran berurut (numbering), dan pengaturan perataan teks.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            {/* Toolbar Buttons */}
-            <div className="flex flex-wrap items-center justify-between p-2 bg-slate-100/80 rounded-xl border border-slate-200 gap-2">
-              <div className="flex items-center gap-1">
-                <button onClick={() => setEditorText(prev => prev + ' <strong>[Teks Tebal]</strong>')} className="p-1.5 bg-white hover:bg-slate-50 rounded-lg border text-xs font-bold px-2.5">B</button>
-                <button onClick={() => setEditorText(prev => prev + ' <em>[Teks Miring]</em>')} className="p-1.5 bg-white hover:bg-slate-50 rounded-lg border text-xs italic px-2.5">I</button>
-                <button onClick={() => setEditorText(prev => prev + ' <u>[Garis Bawah]</u>')} className="p-1.5 bg-white hover:bg-slate-50 rounded-lg border text-xs underline px-2.5">U</button>
+            {/* Toolbar Lengkap */}
+            <div className="flex flex-wrap items-center justify-between p-2 bg-slate-100 rounded-xl border border-slate-200 gap-2">
+              <div className="flex flex-wrap items-center gap-1">
+                {/* Format Font */}
+                <button onClick={() => setEditorText(p => p + ' <strong>[Tebal]</strong>')} className="p-1.5 bg-white rounded-lg border text-xs font-bold px-2.5">B</button>
+                <button onClick={() => setEditorText(p => p + ' <em>[Miring]</em>')} className="p-1.5 bg-white rounded-lg border text-xs italic px-2.5">I</button>
+                <button onClick={() => setEditorText(p => p + ' <u>[Garis Bawah]</u>')} className="p-1.5 bg-white rounded-lg border text-xs underline px-2.5">U</button>
+
                 <div className="h-5 w-px bg-slate-300 mx-1" />
-                <button onClick={() => setEditorText(prev => prev + ' <h3>Sub Judul Audit</h3>')} className="p-1.5 bg-white hover:bg-slate-50 rounded-lg border text-xs px-2">H3</button>
-                <button onClick={() => setEditorText(prev => prev + ' <ul><li>Poin Catatan 1</li><li>Poin Catatan 2</li></ul>')} className="p-1.5 bg-white hover:bg-slate-50 rounded-lg border text-xs px-2">• List</button>
+
+                {/* Numbering & Bullets */}
+                <button 
+                  title="Sisipkan Penomoran"
+                  onClick={() => setEditorText(p => p + '<ol><li>Poin Pertama Audit</li><li>Poin Kedua Rekonsiliasi</li></ol>')}
+                  className="p-1.5 bg-white hover:bg-slate-50 rounded-lg border text-xs flex items-center gap-1 px-2"
+                >
+                  <ListOrdered className="w-3.5 h-3.5" />
+                  <span>1. 2. 3.</span>
+                </button>
+
+                {/* Insert Table */}
+                <button 
+                  title="Sisipkan Tabel Audit"
+                  onClick={() => setEditorText(p => p + '<table border="1" style="width:100%; border-collapse: collapse; margin-top: 8px;"><tr style="background:#f0fdf4;"><th>No</th><th>Item Dokumen</th><th>Kesesuaian</th></tr><tr><td>1</td><td>Rekening Koran</td><td>Sesuai</td></tr></table>')}
+                  className="p-1.5 bg-white hover:bg-slate-50 rounded-lg border text-xs flex items-center gap-1 px-2 text-[#055838] font-bold"
+                >
+                  <TableIcon className="w-3.5 h-3.5" />
+                  <span>+ Tabel</span>
+                </button>
+
+                <div className="h-5 w-px bg-slate-300 mx-1" />
+
+                {/* Alignment */}
+                <button onClick={() => setTextAlign('left')} className={`p-1.5 rounded-lg border ${textAlign === 'left' ? 'bg-emerald-100 text-[#055838]' : 'bg-white'}`} title="Rata Kiri"><AlignLeft className="w-3.5 h-3.5" /></button>
+                <button onClick={() => setTextAlign('center')} className={`p-1.5 rounded-lg border ${textAlign === 'center' ? 'bg-emerald-100 text-[#055838]' : 'bg-white'}`} title="Rata Tengah"><AlignCenter className="w-3.5 h-3.5" /></button>
+                <button onClick={() => setTextAlign('right')} className={`p-1.5 rounded-lg border ${textAlign === 'right' ? 'bg-emerald-100 text-[#055838]' : 'bg-white'}`} title="Rata Kanan"><AlignRight className="w-3.5 h-3.5" /></button>
+                <button onClick={() => setTextAlign('justify')} className={`p-1.5 rounded-lg border ${textAlign === 'justify' ? 'bg-emerald-100 text-[#055838]' : 'bg-white'}`} title="Rata Kiri-Kanan"><AlignJustify className="w-3.5 h-3.5" /></button>
               </div>
 
-              {/* Mode Switch Tabs */}
+              {/* View Modes */}
               <div className="flex items-center gap-1 bg-white p-1 rounded-lg border">
-                <button 
-                  onClick={() => setActiveEditorTab('visual')}
-                  className={`px-2.5 py-1 rounded text-xs font-semibold ${activeEditorTab === 'visual' ? 'bg-[#055838] text-white' : 'text-slate-600'}`}
-                >
-                  Visual
-                </button>
-                <button 
-                  onClick={() => setActiveEditorTab('html')}
-                  className={`px-2.5 py-1 rounded text-xs font-semibold ${activeEditorTab === 'html' ? 'bg-[#055838] text-white' : 'text-slate-600'}`}
-                >
-                  HTML Source
-                </button>
-                <button 
-                  onClick={() => setActiveEditorTab('preview')}
-                  className={`px-2.5 py-1 rounded text-xs font-semibold ${activeEditorTab === 'preview' ? 'bg-[#055838] text-white' : 'text-slate-600'}`}
-                >
-                  Preview
-                </button>
+                <button onClick={() => setActiveEditorTab('visual')} className={`px-2.5 py-1 rounded text-xs font-semibold ${activeEditorTab === 'visual' ? 'bg-[#055838] text-white' : 'text-slate-600'}`}>Visual</button>
+                <button onClick={() => setActiveEditorTab('html')} className={`px-2.5 py-1 rounded text-xs font-semibold ${activeEditorTab === 'html' ? 'bg-[#055838] text-white' : 'text-slate-600'}`}>HTML</button>
+                <button onClick={() => setActiveEditorTab('preview')} className={`px-2.5 py-1 rounded text-xs font-semibold ${activeEditorTab === 'preview' ? 'bg-[#055838] text-white' : 'text-slate-600'}`}>Preview</button>
               </div>
             </div>
 
-            {/* Editor Area */}
+            {/* Editor Textarea with alignment style */}
             {activeEditorTab === 'visual' && (
               <textarea
                 value={editorText}
                 onChange={(e) => setEditorText(e.target.value)}
-                rows={4}
+                style={{ textAlign: textAlign }}
+                rows={5}
                 className="w-full p-3.5 text-xs text-slate-800 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#055838]"
               />
             )}
@@ -475,13 +487,14 @@ export default function DesignSystemPage() {
               <textarea
                 value={editorText}
                 onChange={(e) => setEditorText(e.target.value)}
-                rows={4}
+                rows={5}
                 className="w-full p-3.5 font-mono text-xs text-emerald-950 bg-emerald-50/40 rounded-xl border border-emerald-300 focus:outline-none"
               />
             )}
             {activeEditorTab === 'preview' && (
               <div 
-                className="p-4 bg-white rounded-xl border border-slate-200 text-xs text-slate-700 prose prose-sm max-w-none min-h-[100px]"
+                style={{ textAlign: textAlign }}
+                className="p-4 bg-white rounded-xl border border-slate-200 text-xs text-slate-700 prose prose-sm max-w-none min-h-[120px]"
                 dangerouslySetInnerHTML={{ __html: editorText }}
               />
             )}
@@ -490,96 +503,31 @@ export default function DesignSystemPage() {
       )}
 
       {/* ========================================================================= */}
-      {/* 6. VIEW UNTUK MENAMPILKAN DOKUMEN DAN FOTO */}
-      {/* ========================================================================= */}
-      {(activeSection === 'all' || activeSection === 'preview') && (
-        <Card className="rounded-2xl border-slate-200/90 shadow-sm">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Eye className="w-5 h-5 text-[#055838]" />
-                <span>6. View untuk Menampilkan Dokumen & Foto (Lightbox & Viewer)</span>
-              </CardTitle>
-              <span className="text-[11px] font-mono bg-slate-100 text-slate-700 px-2.5 py-1 rounded-lg">#Viewer #PDF #ImageLightbox</span>
-            </div>
-            <CardDescription>
-              Komponen modal preview untuk berkas digital PDF dan inspeksi foto bukti kwitansi dengan kontrol pembesar.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Card PDF */}
-              <div className="p-4 rounded-2xl border border-slate-200 bg-white flex items-center justify-between hover:shadow-sm transition-shadow">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center font-bold text-xs">
-                    PDF
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-slate-800">Laporan_Audit_Masjid_Kauman.pdf</p>
-                    <p className="text-[10px] text-slate-400">Ukuran: 4.2 MB • Versi 2026</p>
-                  </div>
-                </div>
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  leftIcon={<Eye className="w-3.5 h-3.5" />}
-                  onClick={() => setPreviewModal({
-                    isOpen: true,
-                    type: 'pdf',
-                    title: 'Laporan_Audit_Masjid_Kauman.pdf',
-                    url: 'https://pub-7edd06e807b546809446e2261c43351f.r2.dev/sample.pdf'
-                  })}
-                >
-                  Buka Dokumen
-                </Button>
-              </div>
-
-              {/* Card Image */}
-              <div className="p-4 rounded-2xl border border-slate-200 bg-white flex items-center justify-between hover:shadow-sm transition-shadow">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs">
-                    IMG
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-slate-800">Bukti_Fisik_Kwitansi_Audio.jpg</p>
-                    <p className="text-[10px] text-slate-400">Resolusi 1920x1080 • Kwitansi Bermaterai</p>
-                  </div>
-                </div>
-                <Button 
-                  size="sm" 
-                  variant="secondary" 
-                  leftIcon={<ImageIcon className="w-3.5 h-3.5" />}
-                  onClick={() => setPreviewModal({
-                    isOpen: true,
-                    type: 'image',
-                    title: 'Bukti_Fisik_Kwitansi_Audio.jpg',
-                    url: 'https://pub-7edd06e807b546809446e2261c43351f.r2.dev/sample.jpg'
-                  })}
-                >
-                  Lihat Foto
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* ========================================================================= */}
-      {/* 7. SINGLE ROW ACCORDION CHILD ROWS */}
+      {/* 7. SINGLE ROW ACCORDION CHILD ROWS: >2 ANAK & BUKA/TUTUP SEMUA */}
       {/* ========================================================================= */}
       {(activeSection === 'all' || activeSection === 'accordion') && (
         <Card className="rounded-2xl border-slate-200/90 shadow-sm">
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base flex items-center gap-2">
-                <ChevronDown className="w-5 h-5 text-[#055838]" />
-                <span>7. Single Row Accordion Child Rows (Tabel Expandable)</span>
-              </CardTitle>
-              <span className="text-[11px] font-mono bg-slate-100 text-slate-700 px-2.5 py-1 rounded-lg">#AccordionTable #NestedRows</span>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <ChevronDown className="w-5 h-5 text-[#055838]" />
+                  <span>7. Single Row Accordion Child Rows (&gt;2 Anak Lampiran Berkas)</span>
+                </CardTitle>
+                <CardDescription>
+                  Menampilkan 4 sub-lampiran berkas per baris induk dengan tombol Buka Semua / Tutup Semua baris.
+                </CardDescription>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Button size="sm" variant="outline" onClick={() => toggleAllRows(true)}>
+                  Buka Semua Baris
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => toggleAllRows(false)}>
+                  Tutup Semua Baris
+                </Button>
+              </div>
             </div>
-            <CardDescription>
-              Tabel data audit di mana mengklik satu baris induk akan membuka rincian lampiran berkas di bawahnya.
-            </CardDescription>
           </CardHeader>
           <CardContent className="p-0">
             <div className="overflow-x-auto">
@@ -589,37 +537,49 @@ export default function DesignSystemPage() {
                     <th className="px-4 py-3 w-8"></th>
                     <th className="px-4 py-3">Nama Unit Auditee</th>
                     <th className="px-4 py-3">Periode</th>
+                    <th className="px-4 py-3">Jumlah Lampiran</th>
                     <th className="px-4 py-3">Status</th>
                     <th className="px-4 py-3 text-right">Aksi</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {/* Row 1 */}
+                  {/* Row 1: Masjid Gedhe Kauman with 4 Anak Berkas */}
                   <tr 
                     className="hover:bg-slate-50/80 cursor-pointer transition-colors"
-                    onClick={() => setExpandedRow(expandedRow === 'row-1' ? null : 'row-1')}
+                    onClick={() => setExpandedRows(prev => ({ ...prev, 'row-1': !prev['row-1'] }))}
                   >
                     <td className="px-4 py-3 text-center">
-                      {expandedRow === 'row-1' ? <ChevronDown className="w-4 h-4 text-[#055838]" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}
+                      {expandedRows['row-1'] ? <ChevronDown className="w-4 h-4 text-[#055838]" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}
                     </td>
                     <td className="px-4 py-3 font-bold text-slate-900">Masjid Gedhe Kauman Yogyakarta</td>
-                    <td className="px-4 py-3 font-mono">2026</td>
+                    <td className="px-4 py-3 font-mono">2026-Q1</td>
+                    <td className="px-4 py-3 font-semibold text-emerald-800">4 Berkas Terlampir</td>
                     <td className="px-4 py-3"><StatusBadge status="KOMPLIT" /></td>
-                    <td className="px-4 py-3 text-right font-medium text-emerald-700">Rincian &rarr;</td>
+                    <td className="px-4 py-3 text-right font-medium text-emerald-700">
+                      {expandedRows['row-1'] ? 'Tutup ▲' : 'Buka Rincian ▼'}
+                    </td>
                   </tr>
-                  {expandedRow === 'row-1' && (
-                    <tr className="bg-emerald-50/40">
-                      <td colSpan={5} className="px-8 py-3.5">
+                  {expandedRows['row-1'] && (
+                    <tr className="bg-emerald-50/30">
+                      <td colSpan={6} className="px-8 py-3.5">
                         <div className="p-3 bg-white rounded-xl border border-emerald-200 space-y-2">
-                          <p className="font-bold text-slate-800 text-xs">Lampiran Berkas Terunggah (Cloudflare R2):</p>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
-                            <div className="p-2 rounded bg-slate-50 border flex items-center justify-between">
-                              <span>📄 Rekening Koran BSI Q1 (Valid)</span>
-                              <span className="text-emerald-700 font-bold">✓ Komplit</span>
+                          <p className="font-bold text-slate-800 text-xs">Rincian 4 Anak Berkas (Cloudflare R2):</p>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 text-[11px]">
+                            <div className="p-2 rounded bg-slate-50 border">
+                              <p className="font-bold text-slate-900">1. Rekening Koran BSI</p>
+                              <p className="text-[10px] text-slate-400">PDF • 2.4 MB • Valid</p>
                             </div>
-                            <div className="p-2 rounded bg-slate-50 border flex items-center justify-between">
-                              <span>📄 Sertifikat AIW Tanah Wakaf</span>
-                              <span className="text-emerald-700 font-bold">✓ Komplit</span>
+                            <div className="p-2 rounded bg-slate-50 border">
+                              <p className="font-bold text-slate-900">2. Sertifikat AIW Wakaf</p>
+                              <p className="text-[10px] text-slate-400">PDF • 4.1 MB • Terlegalisir</p>
+                            </div>
+                            <div className="p-2 rounded bg-slate-50 border">
+                              <p className="font-bold text-slate-900">3. Kwitansi Sound System</p>
+                              <p className="text-[10px] text-slate-400">JPG • 1.1 MB • Bermaterai</p>
+                            </div>
+                            <div className="p-2 rounded bg-slate-50 border">
+                              <p className="font-bold text-slate-900">4. SK Pengesahan Takmir</p>
+                              <p className="text-[10px] text-slate-400">PDF • 850 KB • Sah PCM</p>
                             </div>
                           </div>
                         </div>
@@ -627,25 +587,41 @@ export default function DesignSystemPage() {
                     </tr>
                   )}
 
-                  {/* Row 2 */}
+                  {/* Row 2: SD Muhammadiyah Kauman */}
                   <tr 
                     className="hover:bg-slate-50/80 cursor-pointer transition-colors"
-                    onClick={() => setExpandedRow(expandedRow === 'row-2' ? null : 'row-2')}
+                    onClick={() => setExpandedRows(prev => ({ ...prev, 'row-2': !prev['row-2'] }))}
                   >
                     <td className="px-4 py-3 text-center">
-                      {expandedRow === 'row-2' ? <ChevronDown className="w-4 h-4 text-[#055838]" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}
+                      {expandedRows['row-2'] ? <ChevronDown className="w-4 h-4 text-[#055838]" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}
                     </td>
-                    <td className="px-4 py-3 font-bold text-slate-900">SMA Muhammadiyah 1 Yogyakarta (Muhi)</td>
-                    <td className="px-4 py-3 font-mono">2026</td>
+                    <td className="px-4 py-3 font-bold text-slate-900">SD Muhammadiyah Kauman Yogyakarta</td>
+                    <td className="px-4 py-3 font-mono">2026-Q1</td>
+                    <td className="px-4 py-3 font-semibold text-emerald-800">3 Berkas Terlampir</td>
                     <td className="px-4 py-3"><StatusBadge status="DALAM_PROSES" /></td>
-                    <td className="px-4 py-3 text-right font-medium text-emerald-700">Rincian &rarr;</td>
+                    <td className="px-4 py-3 text-right font-medium text-emerald-700">
+                      {expandedRows['row-2'] ? 'Tutup ▲' : 'Buka Rincian ▼'}
+                    </td>
                   </tr>
-                  {expandedRow === 'row-2' && (
-                    <tr className="bg-amber-50/40">
-                      <td colSpan={5} className="px-8 py-3.5">
+                  {expandedRows['row-2'] && (
+                    <tr className="bg-amber-50/30">
+                      <td colSpan={6} className="px-8 py-3.5">
                         <div className="p-3 bg-white rounded-xl border border-amber-200 space-y-2 text-xs">
-                          <p className="font-bold text-slate-800">Catatan Auditor:</p>
-                          <p className="text-slate-600 text-[11px]">Menunggu kelengkapan berita acara kas opname per 31 Maret 2026.</p>
+                          <p className="font-bold text-slate-800">Rincian 3 Anak Berkas:</p>
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px]">
+                            <div className="p-2 rounded bg-slate-50 border">
+                              <p className="font-bold text-slate-900">1. BKU Jan-Maret</p>
+                              <p className="text-[10px] text-slate-400">XLSX • 1.8 MB</p>
+                            </div>
+                            <div className="p-2 rounded bg-slate-50 border">
+                              <p className="font-bold text-slate-900">2. SK Gaji Pegawai</p>
+                              <p className="text-[10px] text-slate-400">PDF • 3.4 MB</p>
+                            </div>
+                            <div className="p-2 rounded bg-slate-50 border">
+                              <p className="font-bold text-slate-900">3. Nota Bahan Bangunan</p>
+                              <p className="text-[10px] text-rose-600 font-semibold">Perlu Revisi Stempel</p>
+                            </div>
+                          </div>
                         </div>
                       </td>
                     </tr>
@@ -658,75 +634,81 @@ export default function DesignSystemPage() {
       )}
 
       {/* ========================================================================= */}
-      {/* 8. PIVOT MATRIKS (STATUS AUDIT VS TIPE UNIT) */}
+      {/* 8. PIVOT MATRIKS: DATA BULANAN JANUARI - DESEMBER */}
       {/* ========================================================================= */}
       {(activeSection === 'all' || activeSection === 'pivot') && (
         <Card className="rounded-2xl border-slate-200/90 shadow-sm">
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Grid className="w-5 h-5 text-[#055838]" />
-                <span>8. Pivot Matriks (Kategori Unit vs Status Kepatuhan)</span>
-              </CardTitle>
-              <span className="text-[11px] font-mono bg-slate-100 text-slate-700 px-2.5 py-1 rounded-lg">#PivotMatrix #CrossTab</span>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Grid className="w-5 h-5 text-[#055838]" />
+                  <span>8. Pivot Matriks Bulanan (Januari s/d Desember 2026)</span>
+                </CardTitle>
+                <CardDescription>
+                  Tampilan matriks jumlah pemenuhan audit per kategori unit sepanjang 12 bulan.
+                </CardDescription>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-slate-500 font-medium">Tahun:</span>
+                <select 
+                  value={pivotFilterYear}
+                  onChange={(e) => setPivotFilterYear(e.target.value)}
+                  className="text-xs border rounded-xl px-2.5 py-1.5 font-bold"
+                >
+                  <option value="2026">2026 (Aktif)</option>
+                  <option value="2025">2025</option>
+                </select>
+              </div>
             </div>
-            <CardDescription>
-              Tabel agregasi matriks persilangan jumlah unit per status kepatuhan secara ringkas.
-            </CardDescription>
           </CardHeader>
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <table className="w-full text-center text-xs text-slate-700">
-                <thead className="bg-slate-100 text-[11px] uppercase text-slate-600 font-bold border-b border-slate-200">
+                <thead className="bg-slate-100 text-[10px] uppercase text-slate-600 font-bold border-b border-slate-200">
                   <tr>
-                    <th className="px-4 py-3 text-left">Kategori Entitas Unit</th>
-                    <th className="px-4 py-3 bg-emerald-50 text-emerald-800">Komplit</th>
-                    <th className="px-4 py-3 bg-blue-50 text-blue-800">Disubmit</th>
-                    <th className="px-4 py-3 bg-amber-50 text-amber-800">Dalam Proses</th>
-                    <th className="px-4 py-3 bg-rose-50 text-rose-800">Revisi</th>
-                    <th className="px-4 py-3 bg-slate-200 text-slate-900">Total Unit</th>
+                    <th className="px-3 py-3 text-left">Kategori Unit</th>
+                    <th className="px-2 py-3">Jan</th>
+                    <th className="px-2 py-3">Feb</th>
+                    <th className="px-2 py-3">Mar</th>
+                    <th className="px-2 py-3">Apr</th>
+                    <th className="px-2 py-3">Mei</th>
+                    <th className="px-2 py-3">Jun</th>
+                    <th className="px-2 py-3">Jul</th>
+                    <th className="px-2 py-3">Agu</th>
+                    <th className="px-2 py-3">Sep</th>
+                    <th className="px-2 py-3">Okt</th>
+                    <th className="px-2 py-3">Nov</th>
+                    <th className="px-2 py-3">Des</th>
+                    <th className="px-3 py-3 bg-emerald-100 text-[#055838]">Total Thn</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 font-mono text-xs">
+                <tbody className="divide-y divide-slate-100 font-mono text-[11px]">
                   <tr className="hover:bg-slate-50">
-                    <td className="px-4 py-3 font-sans font-bold text-left text-slate-900">Masjid-Masjid Muhammadiyah</td>
-                    <td className="px-4 py-3 font-bold text-emerald-700">14</td>
-                    <td className="px-4 py-3">4</td>
-                    <td className="px-4 py-3 text-amber-700">3</td>
-                    <td className="px-4 py-3 text-rose-600">1</td>
-                    <td className="px-4 py-3 font-bold bg-slate-50">22</td>
+                    <td className="px-3 py-2.5 font-sans font-bold text-left text-slate-900">Masjid-Masjid</td>
+                    <td>8</td><td>12</td><td>14</td><td>15</td><td>18</td><td>20</td><td>22</td><td>22</td><td>22</td><td>22</td><td>22</td><td>22</td>
+                    <td className="font-bold bg-emerald-50 text-emerald-800">22 Unit</td>
                   </tr>
                   <tr className="hover:bg-slate-50">
-                    <td className="px-4 py-3 font-sans font-bold text-left text-slate-900">AUM Sekolah (SD & SMP)</td>
-                    <td className="px-4 py-3 font-bold text-emerald-700">28</td>
-                    <td className="px-4 py-3">8</td>
-                    <td className="px-4 py-3 text-amber-700">9</td>
-                    <td className="px-4 py-3 text-rose-600">2</td>
-                    <td className="px-4 py-3 font-bold bg-slate-50">47</td>
+                    <td className="px-3 py-2.5 font-sans font-bold text-left text-slate-900">AUM Sekolah</td>
+                    <td>15</td><td>22</td><td>28</td><td>32</td><td>38</td><td>44</td><td>47</td><td>47</td><td>47</td><td>47</td><td>47</td><td>47</td>
+                    <td className="font-bold bg-emerald-50 text-emerald-800">47 Unit</td>
                   </tr>
                   <tr className="hover:bg-slate-50">
-                    <td className="px-4 py-3 font-sans font-bold text-left text-slate-900">14 PCM (Pimpinan Cabang)</td>
-                    <td className="px-4 py-3 font-bold text-emerald-700">10</td>
-                    <td className="px-4 py-3">2</td>
-                    <td className="px-4 py-3 text-amber-700">2</td>
-                    <td className="px-4 py-3 text-rose-600">0</td>
-                    <td className="px-4 py-3 font-bold bg-slate-50">14</td>
+                    <td className="px-3 py-2.5 font-sans font-bold text-left text-slate-900">14 PCM Cabang</td>
+                    <td>4</td><td>7</td><td>10</td><td>11</td><td>13</td><td>14</td><td>14</td><td>14</td><td>14</td><td>14</td><td>14</td><td>14</td>
+                    <td className="font-bold bg-emerald-50 text-emerald-800">14 PCM</td>
                   </tr>
                   <tr className="hover:bg-slate-50">
-                    <td className="px-4 py-3 font-sans font-bold text-left text-slate-900">14 KL Lazismu Kecamatan</td>
-                    <td className="px-4 py-3 font-bold text-emerald-700">8</td>
-                    <td className="px-4 py-3">3</td>
-                    <td className="px-4 py-3 text-amber-700">2</td>
-                    <td className="px-4 py-3 text-rose-600">1</td>
-                    <td className="px-4 py-3 font-bold bg-slate-50">14</td>
+                    <td className="px-3 py-2.5 font-sans font-bold text-left text-slate-900">14 KL Lazismu</td>
+                    <td>5</td><td>8</td><td>10</td><td>12</td><td>14</td><td>14</td><td>14</td><td>14</td><td>14</td><td>14</td><td>14</td><td>14</td>
+                    <td className="font-bold bg-emerald-50 text-emerald-800">14 KL</td>
                   </tr>
-                  <tr className="bg-slate-100/80 font-bold">
-                    <td className="px-4 py-3 font-sans text-left text-slate-900">Total Seluruh Entitas</td>
-                    <td className="px-4 py-3 text-emerald-700">60</td>
-                    <td className="px-4 py-3 text-blue-700">17</td>
-                    <td className="px-4 py-3 text-amber-700">16</td>
-                    <td className="px-4 py-3 text-rose-600">4</td>
-                    <td className="px-4 py-3 text-slate-900 bg-slate-200">97</td>
+                  <tr className="bg-slate-100 font-bold">
+                    <td className="px-3 py-2.5 font-sans text-left text-slate-900">Total Audit Selesai</td>
+                    <td>32</td><td>49</td><td>62</td><td>70</td><td>83</td><td>92</td><td>97</td><td>97</td><td>97</td><td>97</td><td>97</td><td>97</td>
+                    <td className="bg-emerald-200 text-[#055838]">97 Selesai</td>
                   </tr>
                 </tbody>
               </table>
@@ -746,50 +728,21 @@ export default function DesignSystemPage() {
                 <SlidersHorizontal className="w-5 h-5 text-[#055838]" />
                 <span>9. Standar Kolom Aksi (Action Buttons Pattern)</span>
               </CardTitle>
-              <span className="text-[11px] font-mono bg-slate-100 text-slate-700 px-2.5 py-1 rounded-lg">#ActionColumn #UIStandard</span>
+              <span className="text-[11px] font-mono bg-slate-100 text-slate-700 px-2.5 py-1 rounded-lg">#ActionButtons</span>
             </div>
-            <CardDescription>
-              Pola seragam untuk tombol aksi pada setiap tabel modul (Detail, Unduh, Edit, Hapus, Keputusan).
-            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="p-4 bg-slate-50/70 rounded-2xl border border-slate-200/70 flex flex-wrap items-center justify-between gap-4">
+            <div className="p-4 bg-slate-50/70 rounded-2xl border border-slate-200 flex flex-wrap items-center justify-between gap-3">
               <div>
-                <p className="text-xs font-bold text-slate-900">Pola Tombol Icon Tunggal (Compact Toolbar):</p>
-                <p className="text-[11px] text-slate-500">Hemat ruang dengan tooltip intuitif.</p>
+                <p className="text-xs font-bold text-slate-900">Toolbar Aksi Berkas (Compact Action Group):</p>
+                <p className="text-[11px] text-slate-500">Ikon aksi View, Download, Rename, dan Hapus.</p>
               </div>
-              <div className="flex items-center gap-1.5 bg-white p-1.5 rounded-xl border border-slate-200 shadow-xs">
-                <button title="Lihat Berkas" className="p-2 text-slate-600 hover:text-[#055838] hover:bg-emerald-50 rounded-lg transition-colors">
-                  <Eye className="w-4 h-4" />
-                </button>
-                <button title="Unduh File R2" className="p-2 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
-                  <Download className="w-4 h-4" />
-                </button>
-                <button title="Ubah Nama Tampilan" className="p-2 text-slate-600 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors">
-                  <Pencil className="w-4 h-4" />
-                </button>
+              <div className="flex items-center gap-1.5 bg-white p-1.5 rounded-xl border border-slate-200 shadow-2xs">
+                <button title="Lihat Berkas" className="p-2 text-slate-600 hover:text-[#055838] hover:bg-emerald-50 rounded-lg"><Eye className="w-4 h-4" /></button>
+                <button title="Unduh File R2" className="p-2 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg"><Download className="w-4 h-4" /></button>
+                <button title="Ubah Nama Tampilan" className="p-2 text-slate-600 hover:text-amber-600 hover:bg-amber-50 rounded-lg"><Pencil className="w-4 h-4" /></button>
                 <div className="h-4 w-px bg-slate-200" />
-                <button title="Hapus Berkas" className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors">
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-
-            <div className="p-4 bg-slate-50/70 rounded-2xl border border-slate-200/70 flex flex-wrap items-center justify-between gap-4">
-              <div>
-                <p className="text-xs font-bold text-slate-900">Pola Tombol Keputusan Auditor (Decision Workflow):</p>
-                <p className="text-[11px] text-slate-500">Kombinasi tombol approval/revisi berjenjang.</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button size="sm" variant="primary" leftIcon={<CheckCircle2 className="w-3.5 h-3.5" />}>
-                  Setujui (Komplit)
-                </Button>
-                <Button size="sm" variant="destructive" leftIcon={<AlertCircle className="w-3.5 h-3.5" />}>
-                  Minta Revisi
-                </Button>
-                <Button size="sm" variant="outline">
-                  Riwayat Catatan
-                </Button>
+                <button title="Hapus Berkas" className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg"><Trash2 className="w-4 h-4" /></button>
               </div>
             </div>
           </CardContent>
@@ -802,35 +755,17 @@ export default function DesignSystemPage() {
       {(activeSection === 'all' || activeSection === 'modal_alert') && (
         <Card className="rounded-2xl border-slate-200/90 shadow-sm">
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base flex items-center gap-2">
-                <AlertCircle className="w-5 h-5 text-[#055838]" />
-                <span>10. Modal Alert (Konfirmasi Destructive & Peringatan Sistem)</span>
-              </CardTitle>
-              <span className="text-[11px] font-mono bg-slate-100 text-slate-700 px-2.5 py-1 rounded-lg">#ModalAlert #Confirmation</span>
-            </div>
-            <CardDescription>
-              Dialog konfirmasi terstandar untuk tindakan krusial (penghapusan berkas, tolak SPJ, atau reset konfigurasi).
-            </CardDescription>
+            <CardTitle className="text-base flex items-center gap-2">
+              <AlertCircle className="w-5 h-5 text-[#055838]" />
+              <span>10. Modal Alert (Konfirmasi Destructive & Peringatan)</span>
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent>
             <div className="flex flex-wrap gap-3">
-              <Button 
-                variant="destructive" 
-                onClick={() => {
-                  setAlertType('danger');
-                  setAlertModalOpen(true);
-                }}
-              >
+              <Button variant="destructive" onClick={() => { setAlertType('danger'); setAlertModalOpen(true); }}>
                 Uji Modal Alert Destructive (Hapus)
               </Button>
-              <Button 
-                variant="gold" 
-                onClick={() => {
-                  setAlertType('warning');
-                  setAlertModalOpen(true);
-                }}
-              >
+              <Button variant="gold" onClick={() => { setAlertType('warning'); setAlertModalOpen(true); }}>
                 Uji Modal Alert Warning (Revisi)
               </Button>
             </div>
@@ -845,40 +780,20 @@ export default function DesignSystemPage() {
           onClose={() => setPreviewModal(null)}
           size="lg"
           title={previewModal.title}
-          description="Viewer dokumen R2 Storage LPPK PDM Kota Yogyakarta"
-          footer={
-            <Button variant="outline" onClick={() => setPreviewModal(null)}>Tutup Viewer</Button>
-          }
+          description="Viewer dokumen Cloudflare R2 Storage"
+          footer={<Button variant="outline" onClick={() => setPreviewModal(null)}>Tutup</Button>}
         >
-          <div className="p-4 bg-slate-100 rounded-2xl flex flex-col items-center justify-center min-h-[300px]">
-            {previewModal.type === 'image' ? (
-              <div className="text-center space-y-3">
-                <div className="w-72 h-48 bg-slate-200 rounded-xl flex items-center justify-center text-slate-400 mx-auto border-2 border-dashed border-slate-300">
-                  <ImageIcon className="w-12 h-12" />
-                </div>
-                <p className="text-xs text-slate-600 font-semibold">{previewModal.title}</p>
-                <div className="flex items-center justify-center gap-2">
-                  <Button size="sm" variant="outline" leftIcon={<ZoomIn className="w-3.5 h-3.5" />}>Perbesar</Button>
-                  <Button size="sm" variant="outline" leftIcon={<RotateCw className="w-3.5 h-3.5" />}>Putar</Button>
-                </div>
-              </div>
-            ) : (
-              <div className="text-center space-y-3 w-full">
-                <div className="w-full h-56 bg-slate-200 rounded-xl flex flex-col items-center justify-center text-slate-500 border border-slate-300">
-                  <FileText className="w-12 h-12 text-rose-600 mb-2" />
-                  <p className="text-xs font-bold text-slate-800">Pratinjau PDF Online</p>
-                  <p className="text-[11px] text-slate-400">Terhubung dengan Cloudflare R2 Bucket</p>
-                </div>
-                <Button size="sm" variant="primary" leftIcon={<Download className="w-3.5 h-3.5" />}>
-                  Unduh Salinan Asli
-                </Button>
-              </div>
-            )}
+          <div className="p-6 bg-slate-100 rounded-2xl flex flex-col items-center justify-center min-h-[250px]">
+            <FileText className="w-12 h-12 text-rose-600 mb-2" />
+            <p className="text-xs font-bold text-slate-800">{previewModal.title}</p>
+            <Button size="sm" variant="primary" className="mt-3" leftIcon={<Download className="w-3.5 h-3.5" />}>
+              Unduh dari R2 Storage
+            </Button>
           </div>
         </Modal>
       )}
 
-      {/* MODAL ALERT DIALOG KONFIRMASI */}
+      {/* MODAL ALERT DIALOG */}
       <Modal
         isOpen={alertModalOpen}
         onClose={() => setAlertModalOpen(false)}
@@ -891,7 +806,7 @@ export default function DesignSystemPage() {
               variant={alertType === 'danger' ? 'destructive' : 'primary'}
               onClick={() => {
                 setAlertModalOpen(false);
-                toast.success('Tindakan berhasil diproses!');
+                toast.success('Aksi berhasil diproses!');
               }}
             >
               Ya, Lanjutkan
@@ -899,14 +814,11 @@ export default function DesignSystemPage() {
           </>
         }
       >
-        <div className="space-y-3 text-xs text-slate-600">
-          <p>
-            {alertType === 'danger' 
-              ? 'Apakah Anda yakin ingin menghapus berkas audit ini dari penyimpanan Cloudflare R2? Tindakan ini tidak dapat dibatalkan.'
-              : 'Status dokumen akan diubah menjadi REVISI dan notifikasi evaluasi akan dikirimkan ke email pengurus unit.'
-            }
-          </p>
-        </div>
+        <p className="text-xs text-slate-600">
+          {alertType === 'danger' 
+            ? 'Apakah Anda yakin ingin menghapus berkas ini dari Cloudflare R2?' 
+            : 'Status dokumen akan diubah ke REVISI dan notifikasi dikirimkan ke email Auditee.'}
+        </p>
       </Modal>
 
     </div>
