@@ -23,7 +23,8 @@ import {
   LogOut,
   Sparkles,
   Layers,
-  Settings
+  Settings,
+  RefreshCw
 } from 'lucide-react';
 import { RoleBadge } from '@/components/ui/Badge';
 import { MOCK_USERS } from '@/lib/mock-data';
@@ -33,17 +34,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [sidebarOpen, setSidebarOpen] = useState(false);
   
   // Simulasi User Aktif (memiliki Multi-Group)
-  const [currentUser, setCurrentUser] = useState(MOCK_USERS[3]); // Ahmad Zaki (Multi-group: Takmir Kauman & KL Lazismu Ngampilan & LPPK)
-  const [activeGroupIndex, setActiveGroupIndex] = useState(0);
+  const [currentUser] = useState(MOCK_USERS[3]); // Ahmad Zaki
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
 
-  const activeGroup = currentUser.groups ? currentUser.groups[activeGroupIndex] : {
+  // Ambil group aktif pertama / default
+  const activeGroup = currentUser.groups ? currentUser.groups[0] : {
     groupId: 'default',
     groupName: 'Unit Default',
     role: currentUser.role
   };
 
-  // Navigasi Terstruktur dengan Kategori Lengkap Sesuai Permintaan
+  // Navigasi Terstruktur Bersih
   const navSections = [
     {
       category: 'OPERASIONAL & WORKFLOW',
@@ -66,15 +67,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       category: 'MASTER DATA ORGANISASI',
       items: [
         { label: 'Master Jenjang Organisasi', href: '/levels', icon: Layers },
-        { label: 'Master 165 Unit PDM', href: '/units', icon: FolderTree },
+        { label: 'Hierarki 165 Unit PDM', href: '/units', icon: FolderTree },
         { label: 'Master Template Audit', href: '/templates', icon: FileCode2 },
       ]
     },
     {
-      category: 'PANDUAN & DOKUMENTASI',
+      category: 'PANDUAN & AKUN',
       items: [
         { label: 'Design System & UI Guide', href: '/design-system', icon: Palette },
-        { label: 'Profil & Ganti Password', href: '/profile', icon: KeyRound },
+        { label: 'Profil, Multi-Group & Password', href: '/profile', icon: User },
       ]
     }
   ];
@@ -89,7 +90,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         />
       )}
 
-      {/* Sidebar Navigation */}
+      {/* Sidebar Navigation - Bersih & Rapi tanpa dropdown unit */}
       <aside className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col bg-[#055838] text-white transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-0 lg:translate-x-0 -translate-x-full'
       }`}>
@@ -113,37 +114,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </button>
         </div>
 
-        {/* Multi-Group Context Indicator */}
-        <div className="mx-3 my-3 p-3 rounded-lg bg-emerald-900/60 border border-emerald-700/60">
-          <div className="flex items-center justify-between text-[11px] text-emerald-300 font-semibold mb-1">
-            <span className="flex items-center gap-1.5">
-              <Building2 className="h-3.5 w-3.5 text-amber-400" />
-              UNIT AKTIF (MULTI-GROUP)
-            </span>
-            <span className="text-[10px] bg-amber-400/20 text-amber-300 px-1.5 py-0.2 rounded border border-amber-400/30">
-              {activeGroupIndex + 1}/{currentUser.groups?.length || 1}
-            </span>
+        {/* Info Ringkas Status Unit Aktif (Tanpa Selector, Pindah Unit Dipusatkan di Profil) */}
+        <div className="mx-3 mt-3 px-3 py-2 rounded-lg bg-emerald-900/40 border border-emerald-700/50 flex items-center justify-between text-xs">
+          <div className="truncate">
+            <span className="text-[10px] text-emerald-300 block uppercase font-semibold">Unit Aktif:</span>
+            <span className="text-white font-medium truncate block">{activeGroup.groupName}</span>
           </div>
-          
-          <select 
-            value={activeGroupIndex}
-            onChange={(e) => setActiveGroupIndex(Number(e.target.value))}
-            className="w-full text-xs bg-emerald-950/80 border border-emerald-700/70 rounded px-2 py-1.5 text-white font-medium focus:outline-none focus:ring-1 focus:ring-amber-400"
+          <Link 
+            href="/profile" 
+            title="Pindah unit di menu profil"
+            className="shrink-0 text-[10px] text-amber-300 hover:text-amber-200 bg-emerald-800/80 px-2 py-1 rounded border border-emerald-600/50"
           >
-            {currentUser.groups?.map((g, idx) => (
-              <option key={idx} value={idx}>
-                {g.groupName} ({g.role})
-              </option>
-            ))}
-          </select>
-          <div className="mt-1 text-[10px] text-emerald-300/80 flex items-center justify-between">
-            <span>Peran: <strong className="text-white">{activeGroup.role}</strong></span>
-            <Link href="/profile" className="text-amber-300 hover:underline">Kelola Group</Link>
-          </div>
+            Ubah
+          </Link>
         </div>
 
         {/* Nav Links List */}
-        <div className="flex-1 overflow-y-auto px-3 py-2 space-y-4">
+        <div className="flex-1 overflow-y-auto px-3 py-3 space-y-4">
           {navSections.map((section, sIdx) => (
             <div key={sIdx} className="space-y-1">
               <div className="px-3 text-[10px] font-bold uppercase tracking-wider text-emerald-300/80">
@@ -177,19 +164,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* Footer Sidebar */}
         <div className="p-3 border-t border-emerald-800/80 bg-emerald-900/40">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="h-8 w-8 rounded-full bg-emerald-700 flex items-center justify-center font-bold text-xs text-white border border-emerald-600">
+            <Link href="/profile" className="flex items-center gap-2.5 min-w-0 group">
+              <div className="h-8 w-8 rounded-full bg-emerald-700 flex items-center justify-center font-bold text-xs text-white border border-emerald-600 group-hover:ring-2 group-hover:ring-amber-400">
                 {currentUser.full_name.substring(0, 2).toUpperCase()}
               </div>
               <div className="truncate">
-                <div className="text-xs font-semibold text-white truncate leading-snug">{currentUser.full_name}</div>
+                <div className="text-xs font-semibold text-white truncate leading-snug group-hover:text-amber-300">{currentUser.full_name}</div>
                 <div className="text-[10px] text-emerald-300/90 truncate">{currentUser.email}</div>
               </div>
-            </div>
+            </Link>
             <Link 
               href="/login"
-              title="Logout"
-              className="text-emerald-300 hover:text-white p-1 rounded hover:bg-emerald-800"
+              title="Keluar (Logout)"
+              className="text-emerald-300 hover:text-white p-1.5 rounded hover:bg-emerald-800"
             >
               <LogOut className="h-4 w-4" />
             </Link>
@@ -199,7 +186,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* Main Content Area */}
       <div className="flex flex-1 flex-col overflow-hidden">
-        {/* Top Navbar Header */}
+        {/* Top Navbar Header - Bersih & Rapi tanpa tombol ganti password */}
         <header className="flex h-16 items-center justify-between border-b border-slate-200 bg-white px-4 shadow-2xs lg:px-6">
           <div className="flex items-center gap-3">
             <button
@@ -209,78 +196,80 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             >
               <Menu className="h-5 w-5" />
             </button>
-            <div className="hidden sm:block">
-              <h2 className="text-sm font-semibold text-slate-800">
+            <div>
+              <h2 className="text-sm font-semibold text-slate-800 leading-snug">
                 Sistem Informasi Pengawasan & Akuntabilitas Terpadu PDM Kota Yogyakarta
               </h2>
-              <p className="text-[11px] text-slate-500">
+              <p className="text-[11px] text-slate-500 hidden sm:block">
                 Tahun Buku 2026 • Terhubung dengan Cloudflare R2 & 165 Unit Muhammadiyah
               </p>
             </div>
           </div>
 
-          {/* Quick Header Actions */}
+          {/* Quick Header Actions: Avatar Profile Dropdown */}
           <div className="flex items-center gap-3">
-            {/* Quick Link Ganti Password & Reset */}
-            <Link 
-              href="/profile"
-              className="hidden md:flex items-center gap-1.5 text-xs text-slate-600 hover:text-[#055838] bg-slate-100 hover:bg-emerald-50 px-2.5 py-1.5 rounded-md border border-slate-200 transition-colors"
-            >
-              <KeyRound className="h-3.5 w-3.5 text-amber-500" />
-              <span>Ganti Password</span>
-            </Link>
-
-            {/* Profile Dropdown */}
             <div className="relative">
               <button
                 type="button"
                 onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-                className="flex items-center gap-2 p-1 rounded-full hover:ring-2 hover:ring-emerald-500/20"
+                className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
               >
-                <div className="h-8 w-8 rounded-full bg-[#055838] text-white flex items-center justify-center text-xs font-bold">
+                <div className="h-8 w-8 rounded-full bg-[#055838] text-white flex items-center justify-center text-xs font-bold shadow-xs">
                   {currentUser.full_name.substring(0, 2).toUpperCase()}
                 </div>
-                <span className="hidden md:block text-xs font-medium text-slate-700">
-                  {currentUser.full_name.split(' ')[0]}
-                </span>
+                <div className="hidden md:block text-left">
+                  <div className="text-xs font-semibold text-slate-800 leading-none">{currentUser.full_name.split(' ')[0]}</div>
+                  <div className="text-[10px] text-emerald-700 font-medium mt-0.5">{activeGroup.role}</div>
+                </div>
                 <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
               </button>
 
               {profileDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-56 rounded-md bg-white py-1 shadow-lg ring-1 ring-black/5 z-50 divide-y divide-slate-100">
-                  <div className="px-4 py-2">
-                    <p className="text-xs font-semibold text-slate-900">{currentUser.full_name}</p>
+                <div className="absolute right-0 mt-2 w-64 rounded-lg bg-white py-1.5 shadow-xl ring-1 ring-black/5 z-50 divide-y divide-slate-100">
+                  <div className="px-4 py-2.5">
+                    <p className="text-xs font-bold text-slate-900">{currentUser.full_name}</p>
                     <p className="text-[11px] text-slate-500 truncate">{currentUser.email}</p>
-                    <span className="mt-1 inline-block text-[10px] font-semibold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">
-                      {activeGroup.groupName}
-                    </span>
+                    <div className="mt-2 text-[10px] bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-1 rounded">
+                      Unit Aktif: <strong className="font-semibold">{activeGroup.groupName}</strong>
+                    </div>
                   </div>
+                  
+                  {/* Menu Terpusat di Profil */}
                   <div className="py-1">
                     <Link
-                      href="/profile"
+                      href="/profile?tab=unit"
                       onClick={() => setProfileDropdownOpen(false)}
-                      className="flex items-center gap-2 px-4 py-2 text-xs text-slate-700 hover:bg-slate-50"
+                      className="flex items-center gap-2.5 px-4 py-2 text-xs text-slate-700 hover:bg-emerald-50 hover:text-[#055838]"
                     >
-                      <User className="h-4 w-4 text-slate-400" />
-                      Profil & Multi-Group
+                      <Building2 className="h-4 w-4 text-emerald-600" />
+                      <span>Ganti Unit Aktif ({currentUser.groups?.length || 1} Unit)</span>
+                    </Link>
+                    <Link
+                      href="/profile?tab=password"
+                      onClick={() => setProfileDropdownOpen(false)}
+                      className="flex items-center gap-2.5 px-4 py-2 text-xs text-slate-700 hover:bg-amber-50 hover:text-amber-800"
+                    >
+                      <KeyRound className="h-4 w-4 text-amber-500" />
+                      <span>Ganti Password Akun</span>
                     </Link>
                     <Link
                       href="/profile"
                       onClick={() => setProfileDropdownOpen(false)}
-                      className="flex items-center gap-2 px-4 py-2 text-xs text-slate-700 hover:bg-slate-50"
+                      className="flex items-center gap-2.5 px-4 py-2 text-xs text-slate-700 hover:bg-slate-50"
                     >
-                      <KeyRound className="h-4 w-4 text-amber-500" />
-                      Ganti Password Akun
+                      <User className="h-4 w-4 text-slate-500" />
+                      <span>Pengaturan Lengkap Profil</span>
                     </Link>
                   </div>
+
                   <div className="py-1">
                     <Link
                       href="/login"
                       onClick={() => setProfileDropdownOpen(false)}
-                      className="flex items-center gap-2 px-4 py-2 text-xs text-red-600 hover:bg-red-50"
+                      className="flex items-center gap-2 px-4 py-2 text-xs text-rose-600 hover:bg-rose-50"
                     >
                       <LogOut className="h-4 w-4" />
-                      Keluar (Logout)
+                      <span>Keluar (Logout)</span>
                     </Link>
                   </div>
                 </div>

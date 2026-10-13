@@ -68,6 +68,55 @@ import { Input, Select, Textarea } from '@/components/ui/Forms';
 import { Alert } from '@/components/ui/Alert';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, Pagination } from '@/components/ui/Table';
 
+
+// Data Tambahan untuk Grafik Lengkap (Design System)
+const PIE_FINDING_CATEGORIES = [
+  { name: 'Kepatuhan Keuangan & Bukti Nota', value: 45, color: '#055838' },
+  { name: 'Legalitas Aset & Sertifikat Wakaf', value: 25, color: '#16a34a' },
+  { name: 'Tata Kelola SDM & Penggajian', value: 15, color: '#d97706' },
+  { name: 'Administrasi Persyarikatan', value: 15, color: '#3b82f6' },
+];
+
+const DONUT_SPJ_STATUS = [
+  { name: 'SPJ Komplit & Disetujui', value: 68, color: '#055838' },
+  { name: 'Revisi Kelengkapan Bukti', value: 14, color: '#f59e0b' },
+  { name: 'Sedang Verifikasi Keuangan', value: 12, color: '#3b82f6' },
+  { name: 'Belum Mengirimkan Laporan', value: 6, color: '#ef4444' },
+];
+
+const CUMULATIVE_DATA = [
+  { bulan: 'Jan', bulanan: 45, kumulatif: 45, target: 50 },
+  { bulan: 'Feb', bulanan: 62, kumulatif: 107, target: 110 },
+  { bulan: 'Mar', bulanan: 78, kumulatif: 185, target: 180 },
+  { bulan: 'Apr', bulanan: 95, kumulatif: 280, target: 260 },
+  { bulan: 'Mei', bulanan: 110, kumulatif: 390, target: 360 },
+  { bulan: 'Jun', bulanan: 135, kumulatif: 525, target: 480 },
+  { bulan: 'Jul', bulanan: 120, kumulatif: 645, target: 600 },
+  { bulan: 'Agu', bulanan: 140, kumulatif: 785, target: 730 },
+  { bulan: 'Sep', bulanan: 155, kumulatif: 940, target: 870 },
+  { bulan: 'Okt', bulanan: 165, kumulatif: 1105, target: 1020 },
+  { bulan: 'Nov', bulanan: 180, kumulatif: 1285, target: 1180 },
+  { bulan: 'Des', bulanan: 215, kumulatif: 1500, target: 1350 },
+];
+
+// Waterfall Data: Aliran Arus Kas / Cascading Budget
+const WATERFALL_DATA = [
+  { tahapan: 'Pagu Awal', nilai: 100, floating: 0, fill: '#055838', type: 'TOTAL' },
+  { tahapan: 'Penerimaan ZIS', nilai: 28, floating: 100, fill: '#16a34a', type: 'PLUS' },
+  { tahapan: 'Pendapatan AUM', nilai: 42, floating: 128, fill: '#22c55e', type: 'PLUS' },
+  { tahapan: 'Belanja Program', nilai: 56, floating: 114, fill: '#f59e0b', type: 'MINUS' },
+  { tahapan: 'Biaya Operasional', nilai: 24, floating: 90, fill: '#ef4444', type: 'MINUS' },
+  { tahapan: 'Saldo Akhir', nilai: 90, floating: 0, fill: '#055838', type: 'TOTAL' },
+];
+
+// Heatmap Data: 14 Kemantren x 12 Bulan Aktivitas Kepatuhan SPJ
+const KEMANTREN_LIST = [
+  'Kotagede', 'Gondomanan', 'Kraton', 'Ngampilan', 'Wirobrajan',
+  'Mergangsan', 'Umbulharjo', 'Mantrijeron', 'Gedongtengen', 'Danurejan',
+  'Pakualaman', 'Jetis', 'Tegalrejo', 'Kotabaru'
+];
+const BULAN_LIST = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+
 export default function DesignSystemPage() {
   const [activeSection, setActiveSection] = useState<'all' | 'inputs' | 'tree' | 'charts' | 'editor' | 'preview' | 'accordion' | 'pivot' | 'actions' | 'modal_alert'>('all');
 
@@ -344,33 +393,47 @@ export default function DesignSystemPage() {
       {/* ========================================================================= */}
       {/* 4. VISUALISASI GRAFIK LENGKAP: LINE, AREA REALISASI, & MULTI-BAR */}
       {/* ========================================================================= */}
+            {/* ========================================================================= */}
+      {/* 4. VISUALISASI GRAFIK RECHARTS LENGKAP                                     */}
+      {/* (Area, Line, Multi-Bar, Pie, Donut, Tren Kumulatif, Waterfall, Gauge, Heatmap) */}
+      {/* ========================================================================= */}
       {(activeSection === 'all' || activeSection === 'charts') && (
-        <Card className="rounded-2xl border-slate-200/90 shadow-sm">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base flex items-center gap-2">
-                <BarChart3 className="w-5 h-5 text-[#055838]" />
-                <span>4. Visualisasi Grafik (Recharts Area Realisasi, Line Trend, & Multi-Bar)</span>
-              </CardTitle>
-              <span className="text-[11px] font-mono bg-slate-100 text-slate-700 px-2.5 py-1 rounded-lg">#AreaChart #MultiBar #Recharts</span>
+        <Card className="rounded-2xl border-slate-200/90 shadow-sm overflow-hidden">
+          <CardHeader className="bg-slate-50/70 border-b border-slate-100 pb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <BarChart3 className="w-5 h-5 text-[#055838]" />
+                  <span>4. Visualisasi Grafik Lengkap (Recharts & Dashboard Analitik)</span>
+                </CardTitle>
+                <CardDescription>
+                  Koleksi 8 tipe visualisasi: Area Realisasi, Multi-Bar, Pie Kategori, Donut Status, Tren Kumulatif, Waterfall Arus Kas, Speedometer Gauge & Heatmap Matriks Bulanan.
+                </CardDescription>
+              </div>
+              <span className="text-[11px] font-mono bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full font-bold">
+                8 Model Grafik Terpadu
+              </span>
             </div>
-            <CardDescription>
-              Penambahan grafik Area Chart untuk realisasi anggaran dan Multi-Bar Chart evaluasi kepatuhan antar-PCM.
-            </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="p-6 space-y-8">
+            
+            {/* ROW 1: Area Realisasi + Multi-Bar Cabang */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              {/* Area Chart: Akumulasi Realisasi Nominal SPJ */}
-              <div className="lg:col-span-7 bg-slate-50/70 p-4 rounded-2xl border border-slate-200/70">
-                <p className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                  Realisasi Anggaran SPJ Terverifikasi (Juta Rp):
-                </p>
+              {/* 1. Area Chart */}
+              <div className="lg:col-span-7 bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-[#055838]" />
+                    1. Area Chart: Tren Realisasi SPJ Bulanan (Juta Rp)
+                  </p>
+                  <span className="text-[10px] text-slate-400">Tahun 2026</span>
+                </div>
                 <div className="h-56 w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={trendData}>
                       <defs>
                         <linearGradient id="colorNominal" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#055838" stopOpacity={0.4}/>
+                          <stop offset="5%" stopColor="#055838" stopOpacity={0.45}/>
                           <stop offset="95%" stopColor="#055838" stopOpacity={0.0}/>
                         </linearGradient>
                       </defs>
@@ -384,11 +447,15 @@ export default function DesignSystemPage() {
                 </div>
               </div>
 
-              {/* Multi-Bar Chart Komparasi Antar-Cabang */}
-              <div className="lg:col-span-5 bg-slate-50/70 p-4 rounded-2xl border border-slate-200/70">
-                <p className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                  Komparasi Audit 5 PCM Terbesar:
-                </p>
+              {/* 2. Multi-Bar Chart */}
+              <div className="lg:col-span-5 bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-amber-500" />
+                    2. Multi-Bar: Komparasi 5 PCM Terbesar
+                  </p>
+                  <span className="text-[10px] text-slate-400">Komplit vs Proses</span>
+                </div>
                 <div className="h-56 w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={pcmBarData}>
@@ -404,13 +471,240 @@ export default function DesignSystemPage() {
                 </div>
               </div>
             </div>
+
+            {/* ROW 2: Pie Chart + Donut Chart + Speedometer Gauge */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* 3. Pie Chart Kategori Temuan */}
+              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
+                <p className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-2">
+                  3. Pie Chart: Komposisi Temuan Audit
+                </p>
+                <div className="h-52 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={PIE_FINDING_CATEGORIES}
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={70}
+                        dataKey="value"
+                        label={({ name, percent }: any) => `${(percent * 100).toFixed(0)}%`}
+                        labelLine={false}
+                      >
+                        {PIE_FINDING_CATEGORIES.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value, name) => [`${value}%`, name]} />
+                      <Legend iconType="circle" wrapperStyle={{ fontSize: '10px' }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              {/* 4. Donut Chart Status SPJ */}
+              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
+                <p className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-2">
+                  4. Donut Chart: Status Kepatuhan SPJ 165 Unit
+                </p>
+                <div className="h-52 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={DONUT_SPJ_STATUS}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={45}
+                        outerRadius={70}
+                        paddingAngle={3}
+                        dataKey="value"
+                      >
+                        {DONUT_SPJ_STATUS.map((entry, index) => (
+                          <Cell key={`donut-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value, name) => [`${value}%`, name]} />
+                      <Legend iconType="circle" wrapperStyle={{ fontSize: '10px' }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              {/* 5. Speedometer Gauge Chart */}
+              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs flex flex-col justify-between">
+                <div>
+                  <p className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-1">
+                    5. Gauge: Indeks Kepatuhan Tata Kelola
+                  </p>
+                  <p className="text-[11px] text-slate-500">Skor agregat LPPK PDM Kota Jogja</p>
+                </div>
+
+                <div className="py-4 flex flex-col items-center justify-center relative">
+                  {/* Gauge SVG Speedometer */}
+                  <svg className="w-48 h-28 overflow-visible" viewBox="0 0 100 55">
+                    {/* Background Arc */}
+                    <path
+                      d="M 10 50 A 40 40 0 0 1 90 50"
+                      fill="none"
+                      stroke="#e2e8f0"
+                      strokeWidth="10"
+                      strokeLinecap="round"
+                    />
+                    {/* Active Arc (87.5% progress) */}
+                    <path
+                      d="M 10 50 A 40 40 0 0 1 90 50"
+                      fill="none"
+                      stroke="#055838"
+                      strokeWidth="10"
+                      strokeLinecap="round"
+                      strokeDasharray="125.6"
+                      strokeDashoffset="15.7"
+                    />
+                  </svg>
+                  <div className="text-center mt-[-15px]">
+                    <div className="text-2xl font-black text-[#055838]">87.5%</div>
+                    <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full border border-emerald-200">
+                      Kategori: Sangat Patuh
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex justify-between text-[10px] text-slate-400 border-t border-slate-100 pt-2">
+                  <span>0% (Kritis)</span>
+                  <span>50% (Cukup)</span>
+                  <span>100% (Paripurna)</span>
+                </div>
+              </div>
+            </div>
+
+            {/* ROW 3: Tren Kumulatif + Waterfall Chart */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              {/* 6. Tren Kumulatif Jan-Des */}
+              <div className="lg:col-span-6 bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                    6. Tren Kumulatif: Realisasi vs Target (Jan - Des)
+                  </p>
+                  <span className="text-[10px] text-emerald-700 font-bold">Total: Rp 1,5 Miliar</span>
+                </div>
+                <div className="h-56 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={CUMULATIVE_DATA}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                      <XAxis dataKey="bulan" tick={{ fontSize: 10 }} />
+                      <YAxis tick={{ fontSize: 10 }} unit=" jt" />
+                      <Tooltip formatter={(val) => `Rp ${val} Juta`} />
+                      <Legend verticalAlign="top" height={26} iconType="plainline" />
+                      <Line type="monotone" dataKey="kumulatif" name="Akumulasi Realisasi" stroke="#055838" strokeWidth={3} dot={{ r: 3 }} />
+                      <Line type="monotone" dataKey="target" name="Target RKAT" stroke="#f59e0b" strokeWidth={2} strokeDasharray="4 4" dot={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              {/* 7. Waterfall Chart: Analisis Aliran Arus Kas */}
+              <div className="lg:col-span-6 bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                    7. Waterfall Chart: Alur Anggaran (Miliar Rp)
+                  </p>
+                  <span className="text-[10px] text-slate-400">Pagu s/d Saldo Akhir</span>
+                </div>
+                <div className="h-56 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={WATERFALL_DATA}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                      <XAxis dataKey="tahapan" tick={{ fontSize: 9 }} interval={0} />
+                      <YAxis tick={{ fontSize: 10 }} unit=" M" />
+                      <Tooltip formatter={(val, name, item: any) => [`Rp ${item.payload.nilai} Miliar`, item.payload.tahapan]} />
+                      {/* Floating Base Bar (Invisible) */}
+                      <Bar dataKey="floating" stackId="a" fill="transparent" />
+                      {/* Bar Nilai Sebenarnya */}
+                      <Bar dataKey="nilai" stackId="a" radius={[4, 4, 0, 0]}>
+                        {WATERFALL_DATA.map((entry, index) => (
+                          <Cell key={`waterfall-${index}`} fill={entry.fill} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </div>
+
+            {/* ROW 4: Heatmap Matriks Aktivitas Kepatuhan (14 Kemantren x 12 Bulan) */}
+            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-slate-100 pb-3">
+                <div>
+                  <p className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded bg-emerald-600" />
+                    8. Heatmap Matriks: Kepatuhan Pelaporan SPJ (14 Kemantren x 12 Bulan)
+                  </p>
+                  <p className="text-[11px] text-slate-500">
+                    Gradasi warna menunjukkan tingkat kepatuhan ketepatan waktu pengumpulan dokumen per bulan
+                  </p>
+                </div>
+                {/* Legend Heatmap */}
+                <div className="flex items-center gap-3 text-[10px] text-slate-600">
+                  <span className="flex items-center gap-1">
+                    <span className="w-3 h-3 rounded bg-emerald-700" /> &gt;90% Sangat Patuh
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="w-3 h-3 rounded bg-emerald-500" /> 75-90% Tepat Waktu
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="w-3 h-3 rounded bg-amber-400" /> 50-75% Toleransi
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="w-3 h-3 rounded bg-rose-400" /> &lt;50% Terlambat
+                  </span>
+                </div>
+              </div>
+
+              {/* Grid Heatmap */}
+              <div className="overflow-x-auto">
+                <table className="w-full text-center text-xs">
+                  <thead>
+                    <tr>
+                      <th className="text-left py-1.5 px-2 text-slate-400 font-semibold text-[10px] uppercase w-28">PCM / Kemantren</th>
+                      {BULAN_LIST.map(b => (
+                        <th key={b} className="py-1.5 px-1 text-slate-500 font-bold text-[10px]">{b}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {KEMANTREN_LIST.map((pcm, pIdx) => (
+                      <tr key={pcm} className="hover:bg-slate-50/50">
+                        <td className="text-left py-1.5 px-2 font-medium text-slate-800 text-[11px]">{pcm}</td>
+                        {BULAN_LIST.map((b, bIdx) => {
+                          // Variasi skor kepatuhan simulasi
+                          const score = ((pIdx * 7 + bIdx * 11 + 65) % 45) + 55;
+                          let bgClass = 'bg-emerald-700 text-white';
+                          if (score < 60) bgClass = 'bg-rose-400 text-white';
+                          else if (score < 75) bgClass = 'bg-amber-400 text-slate-900';
+                          else if (score < 90) bgClass = 'bg-emerald-500 text-white';
+
+                          return (
+                            <td key={b} className="p-1">
+                              <div 
+                                title={`${pcm} - ${b} 2026: Kepatuhan ${score}%`}
+                                className={`w-full py-1 rounded text-[10px] font-bold cursor-pointer hover:scale-105 transition-transform ${bgClass}`}
+                              >
+                                {score}%
+                              </div>
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
           </CardContent>
         </Card>
       )}
 
-      {/* ========================================================================= */}
-      {/* 5. TAB MENU EDITOR: +TABEL, NUMBERING, SETTING PARAGRAF */}
-      {/* ========================================================================= */}
       {(activeSection === 'all' || activeSection === 'editor') && (
         <Card className="rounded-2xl border-slate-200/90 shadow-sm">
           <CardHeader>
