@@ -34,7 +34,10 @@ import {
   AlertTriangle,
   ArrowRight,
   ExternalLink,
-  Sparkles
+  Sparkles,
+  MessageSquareQuote,
+  Check,
+  Layers
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -55,6 +58,8 @@ interface AuditDocumentItem {
   ukuranFile?: string;
   fileKey?: string;
   catatanAuditor?: string;
+  auditorName?: string;
+  tanggalUpdate?: string;
 }
 
 interface ActiveAuditUnit {
@@ -102,7 +107,9 @@ const ACTIVE_AUDIT_UNITS: ActiveAuditUnit[] = [
         namaFile: 'Rekening_Koran_BSI_KL_Ngampilan_Q1.pdf',
         ukuranFile: '1.4 MB',
         fileKey: 'Rekening_Koran_BSI_KL_Ngampilan_Q1.pdf',
-        catatanAuditor: 'Saldo fisik kas tunai dan rekening bank telah cocok dan terverifikasi per 31 Maret 2026.'
+        catatanAuditor: 'Saldo fisik kas tunai dan rekening bank BSI telah diverifikasi cocok dengan buku kas per 31 Maret 2026. Berita acara kas opname ditandatangani lengkap bersama saksi bendahara.',
+        auditorName: 'Drs. H. M. Husnan, M.Ag.',
+        tanggalUpdate: '11 April 2026 14:30 WIB'
       },
       {
         id: 'doc-ng-2',
@@ -114,19 +121,23 @@ const ACTIVE_AUDIT_UNITS: ActiveAuditUnit[] = [
         namaFile: 'Buku_Besar_Penerimaan_ZIS_Maret2026.xlsx',
         ukuranFile: '840 KB',
         fileKey: 'Buku_Besar_Penerimaan_ZIS_Maret2026.xlsx',
-        catatanAuditor: 'Sedang dicocokkan dengan bukti potong kwitansi ZIS nomor 001-140.'
+        catatanAuditor: 'Sedang dalam proses pencocokan uji petik kwitansi ZIS no. 001 sampai 140 dengan mutasi rekening BSI.',
+        auditorName: 'Noviar Handi Al Faani, SE., Akt.',
+        tanggalUpdate: '12 April 2026 10:15 WIB'
       },
       {
         id: 'doc-ng-3',
         namaDokumen: 'Daftar Mustahik & Bukti Penyaluran Program Ramadhan 1447H',
-        posAudit: 'Penyaluran ZIS',
+        posAudit: 'Penyaluran Dana ZIS',
         statusTahap: '4_REVISI',
         statusLabel: '4. Catatan Revisi',
         statusBadgeColor: 'bg-amber-100 text-amber-900 border-amber-300',
         namaFile: 'SPJ_Penyaluran_Ramadhan_1447H.pdf',
         ukuranFile: '3.2 MB',
         fileKey: 'SPJ_Penyaluran_Ramadhan_1447H.pdf',
-        catatanAuditor: 'Mohon dilengkapi Berita Acara Serah Terima beras dan tanda tangan pengesahan Ketua PCM.'
+        catatanAuditor: 'Catatan Revisi: Mohon dilengkapi lampiran Berita Acara Serah Terima (BAST) sembako dan tanda tangan pengesahan dari Ketua PCM Ngampilan pada lembar rekapitulasi penyaluran.',
+        auditorName: 'Drs. H. M. Husnan, M.Ag.',
+        tanggalUpdate: '13 April 2026 09:20 WIB'
       },
       {
         id: 'doc-ng-4',
@@ -135,7 +146,9 @@ const ACTIVE_AUDIT_UNITS: ActiveAuditUnit[] = [
         statusTahap: '2_DIPROSES',
         statusLabel: '2. Diproses Auditee',
         statusBadgeColor: 'bg-indigo-100 text-indigo-800 border-indigo-300',
-        catatanAuditor: 'Menunggu bendahara mengunggah rincian nota belanja operasional kantor.'
+        catatanAuditor: 'Auditee sedang menyusun rincian bukti nota belanja operasional kantor dan memastikan porsi amil di bawah 12.5%.',
+        auditorName: 'Noviar Handi Al Faani, SE., Akt.',
+        tanggalUpdate: '13 April 2026 16:00 WIB'
       }
     ]
   },
@@ -165,19 +178,23 @@ const ACTIVE_AUDIT_UNITS: ActiveAuditUnit[] = [
         namaFile: 'BKU_BOS_SMP_Muhammadiyah_2_Q1.xlsx',
         ukuranFile: '1.8 MB',
         fileKey: 'BKU_BOS_SMP_Muhammadiyah_2_Q1.xlsx',
-        catatanAuditor: 'Penatausahaan BKU telah sesuai format juknis BOS Kemendikbudristek 2026.'
+        catatanAuditor: 'Penatausahaan BKU telah sesuai format juknis BOS Kemendikbudristek 2026 dan rekonsiliasi bank klir.',
+        auditorName: 'Noviar Handi Al Faani, SE., Akt.',
+        tanggalUpdate: '10 April 2026 11:30 WIB'
       },
       {
         id: 'doc-smp-2',
         namaDokumen: 'SPJ Belanja Modal Buku Paket & Alat Laboratorium IPA',
-        posAudit: 'Belanja Pengadaan Modal',
+        posAudit: 'Belanja Modal & Inventaris',
         statusTahap: '4_REVISI',
         statusLabel: '4. Catatan Revisi',
         statusBadgeColor: 'bg-amber-100 text-amber-900 border-amber-300',
         namaFile: 'SPJ_Buku_Lab_IPA_BOS.pdf',
         ukuranFile: '4.1 MB',
         fileKey: 'SPJ_Buku_Lab_IPA_BOS.pdf',
-        catatanAuditor: 'Faktur pajak e-Faktur belum dilampirkan oleh penyedia buku paket perpustakaan.'
+        catatanAuditor: 'Catatan Revisi: Kuitansi pengadaan 120 eksemplar buku belum dilampiri faktur pajak e-Faktur dan Berita Acara Penerimaan Barang dari pengelola perpustakaan.',
+        auditorName: 'Noviar Handi Al Faani, SE., Akt.',
+        tanggalUpdate: '12 April 2026 14:10 WIB'
       },
       {
         id: 'doc-smp-3',
@@ -189,7 +206,9 @@ const ACTIVE_AUDIT_UNITS: ActiveAuditUnit[] = [
         namaFile: 'Payroll_Maret_2026_SMPM2.pdf',
         ukuranFile: '720 KB',
         fileKey: 'Payroll_Maret_2026_SMPM2.pdf',
-        catatanAuditor: 'Telah diverifikasi sesuai standar upah persyarikatan dan bukti transfer bank.'
+        catatanAuditor: 'Daftar gaji dan bukti transfer payroll BSI telah diteliti dan sesuai SK penetapan persyarikatan.',
+        auditorName: 'Drs. Rochmat, M.Pd.',
+        tanggalUpdate: '11 April 2026 09:45 WIB'
       },
       {
         id: 'doc-smp-4',
@@ -201,7 +220,9 @@ const ACTIVE_AUDIT_UNITS: ActiveAuditUnit[] = [
         namaFile: 'Rekap_SPP_Siswa_Jan_Mar2026.xlsx',
         ukuranFile: '1.1 MB',
         fileKey: 'Rekap_SPP_Siswa_Jan_Mar2026.xlsx',
-        catatanAuditor: 'Sedang dalam pengecekan rekonsiliasi data kasir tata usaha sekolah.'
+        catatanAuditor: 'Sedang dilakukan pengecekan silang dengan laporan kasir bendahara sekolah.',
+        auditorName: 'Heru Suroso, S.H.',
+        tanggalUpdate: '13 April 2026 13:00 WIB'
       }
     ]
   },
@@ -231,7 +252,9 @@ const ACTIVE_AUDIT_UNITS: ActiveAuditUnit[] = [
         namaFile: 'Laporan_Kas_Kotak_Infaq_Maret2026.pdf',
         ukuranFile: '980 KB',
         fileKey: 'Laporan_Kas_Kotak_Infaq_Maret2026.pdf',
-        catatanAuditor: 'Penghitungan kotak infak teratur setiap pekan dengan dua saksi takmir.'
+        catatanAuditor: 'Penghitungan dan pencatatan kas infak tertib mingguan dengan saksi dua orang takmir.',
+        auditorName: 'Muhammad Faris, S.E., M.Acc., Ak., CA',
+        tanggalUpdate: '08 April 2026 15:00 WIB'
       },
       {
         id: 'doc-masjid-2',
@@ -243,7 +266,9 @@ const ACTIVE_AUDIT_UNITS: ActiveAuditUnit[] = [
         namaFile: 'Sertifikat_Wakaf_Suronatan_LPPK.pdf',
         ukuranFile: '2.5 MB',
         fileKey: 'Sertifikat_Wakaf_Suronatan_LPPK.pdf',
-        catatanAuditor: 'Aset wakaf tanah dan bangunan masjid telah tercatat sah atas nama Persyarikatan Muhammadiyah.'
+        catatanAuditor: 'Dokumen legalitas tanah wakaf masjid telah sah atas nama Persyarikatan Muhammadiyah terdaftar di BPN.',
+        auditorName: 'Muhammad Faris, S.E., M.Acc., Ak., CA',
+        tanggalUpdate: '09 April 2026 10:30 WIB'
       }
     ]
   }
@@ -408,7 +433,66 @@ export default function DashboardPage() {
       </div>
 
       {/* ========================================================================= */}
-      {/* SEKSI UTAMA: DAFTAR UNIT YANG SEDANG DIAUDIT DENGAN COLLAPSE DETAIL      */}
+      {/* 1. VISUALISASI GRAFIK KEPATUHAN (POSISI DI ATAS TABEL UNIT DIAUDIT)       */}
+      {/* ========================================================================= */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Pie Chart: Status Dokumen */}
+        <Card className="lg:col-span-1 shadow-2xs">
+          <CardHeader>
+            <CardTitle>Status Pemenuhan Dokumen</CardTitle>
+            <CardDescription>Persentase kepatuhan seluruh permintaan berkas</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col items-center">
+            <div className="h-64 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={pieData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={55}
+                    outerRadius={85}
+                    paddingAngle={4}
+                    dataKey="value"
+                  >
+                    {pieData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value) => `${value}%`} />
+                  <Legend verticalAlign="bottom" height={36} iconType="circle" />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Bar Chart: Progress per Tipe Unit */}
+        <Card className="lg:col-span-2 shadow-2xs">
+          <CardHeader>
+            <CardTitle>Progres Audit per Kategori Entitas</CardTitle>
+            <CardDescription>Perbandingan jumlah berkas target vs selesai diverifikasi</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-64 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={barData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <XAxis dataKey="type" tick={{ fontSize: 12, fill: '#64748b' }} />
+                  <YAxis tick={{ fontSize: 12, fill: '#64748b' }} />
+                  <Tooltip />
+                  <Legend verticalAlign="top" align="right" height={36} />
+                  <Bar dataKey="total" name="Total Permintaan" fill="#cbd5e1" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="selesai" name="Selesai (Komplit)" fill="#055838" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* ========================================================================= */}
+      {/* 2. DAFTAR UNIT YANG SEDANG DIAUDIT (POSISI SEKARANG DI BAWAH GRAFIK)      */}
       {/* ========================================================================= */}
       <Card className="rounded-2xl border-slate-200 shadow-xs overflow-hidden bg-white">
         <CardHeader className="bg-slate-50/80 border-b border-slate-200/90 p-4">
@@ -526,13 +610,14 @@ export default function DashboardPage() {
                   </div>
 
                   {/* ========================================================= */}
-                  {/* ACCORDION ANAK: DATA APA YANG DIMINTA, POSISI & DOWNLOAD */}
+                  {/* DETAIL BUTIR DOKUMEN & PANEL CATATAN AUDITOR YANG ELEGAN */}
                   {/* ========================================================= */}
                   {isExpanded && (
-                    <div className="p-4 bg-slate-50/70 border-t border-slate-200 space-y-3">
+                    <div className="p-4 bg-slate-50/80 border-t border-slate-200 space-y-3.5">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                          <span className="text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
+                            <Layers className="w-3.5 h-3.5 text-[#055838]" />
                             Butir Dokumen yang Diminta & Posisi Alur Pemeriksaan:
                           </span>
                           <span className="text-[10px] bg-emerald-100 text-[#055838] font-bold px-2 py-0.5 rounded-full">
@@ -544,82 +629,112 @@ export default function DashboardPage() {
                           href="/audit"
                           className="text-[11px] font-bold text-[#055838] hover:underline flex items-center gap-1"
                         >
-                          Kelola di Modul Audit <ArrowRight className="w-3.5 h-3.5" />
+                          Buka di Modul Audit <ArrowRight className="w-3.5 h-3.5" />
                         </Link>
                       </div>
 
-                      {/* Tabel Rincian Dokumen yang Diminta */}
-                      <div className="overflow-x-auto bg-white rounded-xl border border-slate-200 shadow-2xs">
-                        <table className="w-full text-left text-xs text-slate-800">
-                          <thead className="bg-slate-100 text-[11px] uppercase font-bold text-slate-600 border-b border-slate-200">
-                            <tr>
-                              <th className="p-3 w-10 text-center">No</th>
-                              <th className="p-3">Data / Berkas yang Diminta</th>
-                              <th className="p-3">Pos Audit</th>
-                              <th className="p-3">Posisi Alur Dokumen</th>
-                              <th className="p-3">Berkas Terunggah</th>
-                              <th className="p-3 text-right">Aksi Unduh</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-100">
-                            {unit.dokumenList.map((doc, dIdx) => (
-                              <tr key={doc.id} className="hover:bg-slate-50/60">
-                                <td className="p-3 text-center font-bold text-slate-400">
-                                  {dIdx + 1}
-                                </td>
-                                <td className="p-3 max-w-sm">
-                                  <div className="font-bold text-slate-900">{doc.namaDokumen}</div>
-                                  {doc.catatanAuditor && (
-                                    <div className="text-[10px] text-slate-500 mt-0.5 flex items-start gap-1">
-                                      <span className="font-semibold text-amber-700 shrink-0">Catatan:</span>
-                                      <span>{doc.catatanAuditor}</span>
+                      {/* Daftar Kartu Butir Dokumen yang Menampilkan Catatan Sangat Cakep */}
+                      <div className="space-y-3">
+                        {unit.dokumenList.map((doc, dIdx) => {
+                          const isSah = doc.statusTahap === '5_SAH';
+                          const isRevisi = doc.statusTahap === '4_REVISI';
+                          const isReviu = doc.statusTahap === '3_REVIU';
+
+                          return (
+                            <div 
+                              key={doc.id}
+                              className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden transition-all hover:border-slate-300"
+                            >
+                              {/* Header Baris Dokumen */}
+                              <div className="p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 bg-slate-50/40">
+                                <div className="flex items-start gap-3 min-w-0">
+                                  <div className="w-6 h-6 rounded-lg bg-emerald-100 text-[#055838] font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">
+                                    {dIdx + 1}
+                                  </div>
+                                  <div>
+                                    <h4 className="font-bold text-slate-900 text-xs sm:text-sm leading-snug">
+                                      {doc.namaDokumen}
+                                    </h4>
+                                    <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                      <span className="text-[10px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200/70">
+                                        Pos: {doc.posAudit}
+                                      </span>
+                                      <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${doc.statusBadgeColor}`}>
+                                        {doc.statusLabel}
+                                      </span>
                                     </div>
-                                  )}
-                                </td>
-                                <td className="p-3 whitespace-nowrap">
-                                  <span className="font-medium text-slate-700 bg-slate-100 px-2 py-0.5 rounded text-[11px]">
-                                    {doc.posAudit}
-                                  </span>
-                                </td>
-                                <td className="p-3 whitespace-nowrap">
-                                  <span className={`text-[10px] font-bold px-2 py-1 rounded-lg border ${doc.statusBadgeColor}`}>
-                                    {doc.statusLabel}
-                                  </span>
-                                </td>
-                                <td className="p-3 whitespace-nowrap">
-                                  {doc.namaFile ? (
-                                    <div className="flex items-center gap-1.5 text-slate-700">
-                                      <FileText className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
-                                      <div>
-                                        <div className="font-medium text-[11px] truncate max-w-[180px]">{doc.namaFile}</div>
-                                        <div className="text-[9px] text-slate-400">{doc.ukuranFile}</div>
+                                  </div>
+                                </div>
+
+                                {/* Informasi Berkas Terunggah & Tombol Unduh Aman */}
+                                <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                                  {doc.namaFile && doc.fileKey ? (
+                                    <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-xl border border-slate-200">
+                                      <div className="text-right hidden sm:block">
+                                        <div className="text-[11px] font-semibold text-slate-800 truncate max-w-[170px]">{doc.namaFile}</div>
+                                        <div className="text-[9px] text-slate-400 font-mono">{doc.ukuranFile}</div>
                                       </div>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleDownloadFile(doc.fileKey!, doc.namaFile!)}
+                                        title={`Unduh ${doc.namaFile} (Bebas Blokir IndiHome)`}
+                                        className="inline-flex items-center gap-1.5 text-[11px] font-bold bg-[#055838] hover:bg-[#04432b] text-white px-3 py-1.5 rounded-lg transition-all shadow-2xs active:scale-95"
+                                      >
+                                        <Download className="w-3.5 h-3.5" />
+                                        <span>Unduh Berkas</span>
+                                      </button>
                                     </div>
                                   ) : (
-                                    <span className="text-[11px] text-slate-400 italic">
-                                      Belum ada berkas
+                                    <span className="text-[11px] text-slate-400 italic px-2 py-1 bg-slate-50 rounded-lg border border-slate-100">
+                                      Belum ada berkas terunggah
                                     </span>
                                   )}
-                                </td>
-                                <td className="p-3 text-right whitespace-nowrap">
-                                  {doc.namaFile && doc.fileKey ? (
-                                    <button
-                                      type="button"
-                                      onClick={() => handleDownloadFile(doc.fileKey!, doc.namaFile!)}
-                                      title={`Unduh ${doc.namaFile} (Bebas Blokir IndiHome)`}
-                                      className="inline-flex items-center gap-1 text-[11px] font-bold bg-emerald-50 hover:bg-[#055838] text-[#055838] hover:text-white px-2.5 py-1.5 rounded-xl border border-emerald-300 transition-all shadow-2xs active:scale-95"
-                                    >
-                                      <Download className="w-3.5 h-3.5" />
-                                      Unduh Berkas
-                                    </button>
-                                  ) : (
-                                    <span className="text-[10px] text-slate-400">-</span>
-                                  )}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                                </div>
+                              </div>
+
+                              {/* PANEL CATATAN AUDITOR (DESAIN KHUSUS CAKEP & JELAS) */}
+                              <div className="p-3.5">
+                                <div className={`p-3 rounded-xl border flex items-start gap-3 ${
+                                  isRevisi
+                                    ? 'bg-amber-50/70 border-amber-200 text-amber-950'
+                                    : isSah
+                                    ? 'bg-emerald-50/60 border-emerald-200 text-emerald-950'
+                                    : isReviu
+                                    ? 'bg-blue-50/60 border-blue-200 text-blue-950'
+                                    : 'bg-slate-50 border-slate-200 text-slate-800'
+                                }`}>
+                                  <div className={`p-2 rounded-lg shrink-0 mt-0.5 ${
+                                    isRevisi 
+                                      ? 'bg-amber-200/80 text-amber-800' 
+                                      : isSah 
+                                      ? 'bg-emerald-200/80 text-emerald-800' 
+                                      : 'bg-blue-200/80 text-blue-800'
+                                  }`}>
+                                    <MessageSquareQuote className="w-4 h-4" />
+                                  </div>
+
+                                  <div className="space-y-1 flex-1 text-xs">
+                                    <div className="flex items-center justify-between flex-wrap gap-2">
+                                      <div className="flex items-center gap-1.5 font-bold">
+                                        <span className="uppercase text-[10px] tracking-wider text-slate-500">Catatan Auditor:</span>
+                                        <span className="text-slate-900">{doc.auditorName || 'Tim Verifikator LPPK'}</span>
+                                      </div>
+                                      {doc.tanggalUpdate && (
+                                        <span className="text-[10px] font-mono text-slate-400">
+                                          {doc.tanggalUpdate}
+                                        </span>
+                                      )}
+                                    </div>
+
+                                    <p className="text-slate-700 leading-relaxed pt-0.5">
+                                      {doc.catatanAuditor || 'Belum ada catatan koreksi untuk butir dokumen ini.'}
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   )}
@@ -630,64 +745,7 @@ export default function DashboardPage() {
         </CardContent>
       </Card>
 
-      {/* Visualisasi Grafik Kepatuhan */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Pie Chart: Status Dokumen */}
-        <Card className="lg:col-span-1 shadow-2xs">
-          <CardHeader>
-            <CardTitle>Status Pemenuhan Dokumen</CardTitle>
-            <CardDescription>Persentase kepatuhan seluruh permintaan berkas</CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col items-center">
-            <div className="h-64 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={pieData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={55}
-                    outerRadius={85}
-                    paddingAngle={4}
-                    dataKey="value"
-                  >
-                    {pieData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value) => `${value}%`} />
-                  <Legend verticalAlign="bottom" height={36} iconType="circle" />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Bar Chart: Progress per Tipe Unit */}
-        <Card className="lg:col-span-2 shadow-2xs">
-          <CardHeader>
-            <CardTitle>Progres Audit per Kategori Entitas</CardTitle>
-            <CardDescription>Perbandingan jumlah berkas target vs selesai diverifikasi</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-64 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={barData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                  <XAxis dataKey="type" tick={{ fontSize: 12, fill: '#64748b' }} />
-                  <YAxis tick={{ fontSize: 12, fill: '#64748b' }} />
-                  <Tooltip />
-                  <Legend verticalAlign="top" align="right" height={36} />
-                  <Bar dataKey="total" name="Total Permintaan" fill="#cbd5e1" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="selesai" name="Selesai (Komplit)" fill="#055838" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Ringkasan Permintaan Audit Terbaru */}
+      {/* Ringkasan Aktivitas Permintaan Audit Terbaru */}
       <Card className="shadow-2xs">
         <CardHeader>
           <div className="flex items-center justify-between">
