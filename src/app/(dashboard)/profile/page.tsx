@@ -43,6 +43,10 @@ export default function ProfilePage() {
           setFullName(found.full_name);
         }
       }
+      const savedGroupIdx = localStorage.getItem('lppk_active_group_idx');
+      if (savedGroupIdx !== null && !isNaN(parseInt(savedGroupIdx))) {
+        setSelectedGroupIndex(parseInt(savedGroupIdx));
+      }
     }
   }, []);
 
@@ -75,6 +79,13 @@ export default function ProfilePage() {
 
   const handleSwitchUnit = (idx: number) => {
     setSelectedGroupIndex(idx);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('lppk_active_group_idx', idx.toString());
+      if (currentUser.groups && currentUser.groups[idx]) {
+        localStorage.setItem('lppk_active_role', currentUser.groups[idx].role);
+      }
+      window.dispatchEvent(new Event('lppk_unit_changed'));
+    }
     setUnitSwitchSuccess(true);
     setTimeout(() => setUnitSwitchSuccess(false), 3000);
   };

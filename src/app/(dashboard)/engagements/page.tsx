@@ -3,6 +3,10 @@
 import React, { useState } from 'react';
 import { 
   Briefcase, 
+  Users, 
+  Trash2, 
+  FilePlus, 
+  X, 
   CheckCircle2, 
   Clock, 
   AlertTriangle, 
@@ -143,6 +147,28 @@ export default function EngagementsAuditPage() {
 
   // Modal Tambah Temuan KKP
   const [isAddFindingModalOpen, setIsAddFindingModalOpen] = useState(false);
+
+  // Modal Buat Surat Tugas Baru
+  const [isCreateStModalOpen, setIsCreateStModalOpen] = useState(false);
+  const [newStNumber, setNewStNumber] = useState('ST/021/LPPK-PDM/IV/2026');
+  const [newStTitle, setNewStTitle] = useState('Pemeriksaan Kepatuhan Keuangan & Operasional Semester I 2026');
+  const [newStCategory, setNewStCategory] = useState<'LAZISMU' | 'SEKOLAH' | 'MASJID'>('SEKOLAH');
+  const [newStUnitName, setNewStUnitName] = useState('SMP Muhammadiyah 3 Yogyakarta');
+  const [newStLeadAuditor, setNewStLeadAuditor] = useState('Muhammad Faris, S.E., M.Acc., Ak., CA');
+  const [newStAuditors, setNewStAuditors] = useState<string[]>(['Aris Saptono, S.E.', 'Heru Suroso, S.H.']);
+  const [tempAuditorInput, setTempAuditorInput] = useState('');
+  const [newStPicAuditee, setNewStPicAuditee] = useState('Drs. H. Bambang, M.Pd. (Kepala Sekolah) & Bendahara');
+  const [newStStartDate, setNewStStartDate] = useState('15 April 2026');
+  const [newStEndDate, setNewStEndDate] = useState('15 Mei 2026');
+
+  // Modal Kelola Tim Petugas pada Penugasan Aktif
+  const [isManageTeamModalOpen, setIsManageTeamModalOpen] = useState(false);
+  const [editLeadAuditor, setEditLeadAuditor] = useState('');
+  const [editAuditors, setEditAuditors] = useState<string[]>([]);
+  const [addMemberInput, setAddMemberInput] = useState('');
+
+  // Modal Cetak Draf Format Surat Tugas Resmi
+  const [isPrintStModalOpen, setIsPrintStModalOpen] = useState(false);
   const [newPosAudit, setNewPosAudit] = useState('');
   const [newKondisi, setNewKondisi] = useState('');
   const [newKriteria, setNewKriteria] = useState('');
@@ -152,6 +178,83 @@ export default function EngagementsAuditPage() {
 
   const currentEng = engagements[selectedEngIndex] || engagements[0];
   const progressPercent = Math.round((currentEng.dokumenValid / currentEng.totalDokumenDiminta) * 100);
+
+  // Handler Buka Modal Kelola Tim
+  const handleOpenManageTeam = () => {
+    setEditLeadAuditor(currentEng.ketuaAuditor);
+    setEditAuditors([...currentEng.anggotaAuditor]);
+    setAddMemberInput('');
+    setIsManageTeamModalOpen(true);
+  };
+
+  // Simpan Perubahan Tim Petugas
+  const handleSaveTeam = (e: React.FormEvent) => {
+    e.preventDefault();
+    const updated = [...engagements];
+    updated[selectedEngIndex].ketuaAuditor = editLeadAuditor;
+    updated[selectedEngIndex].anggotaAuditor = editAuditors;
+    setEngagements(updated);
+    setIsManageTeamModalOpen(false);
+    toast.success('Susunan tim petugas auditor berhasil diperbarui!');
+  };
+
+  // Tambah Anggota di Modal Kelola Tim
+  const handleAddMemberToActive = () => {
+    if (!addMemberInput.trim()) return;
+    setEditAuditors([...editAuditors, addMemberInput.trim()]);
+    setAddMemberInput('');
+  };
+
+  // Hapus Anggota di Modal Kelola Tim
+  const handleRemoveMemberFromActive = (idxToRemove: number) => {
+    setEditAuditors(editAuditors.filter((_, idx) => idx !== idxToRemove));
+  };
+
+  // Tambah Anggota di Form ST Baru
+  const handleAddAuditorToNewSt = () => {
+    if (!tempAuditorInput.trim()) return;
+    setNewStAuditors([...newStAuditors, tempAuditorInput.trim()]);
+    setTempAuditorInput('');
+  };
+
+  // Hapus Anggota di Form ST Baru
+  const handleRemoveAuditorFromNewSt = (idxToRemove: number) => {
+    setNewStAuditors(newStAuditors.filter((_, idx) => idx !== idxToRemove));
+  };
+
+  // Simpan Surat Tugas Baru
+  const handleCreateNewSt = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newStNumber || !newStUnitName || !newStLeadAuditor) {
+      toast.error('Nomor Surat Tugas, Unit Sasaran, dan Ketua Auditor wajib diisi!');
+      return;
+    }
+
+    const newEngagement: EngagementData = {
+      id: `eng-${Date.now()}`,
+      nomorSuratTugas: newStNumber,
+      namaPenugasan: newStTitle,
+      kategori: newStCategory,
+      namaUnit: newStUnitName,
+      ketuaAuditor: newStLeadAuditor,
+      anggotaAuditor: newStAuditors.length > 0 ? newStAuditors : ['Aris Saptono, S.E.'],
+      picAuditee: newStPicAuditee,
+      tanggalMulai: newStStartDate,
+      tanggalSelesai: newStEndDate,
+      statusPenugasan: 'PELAKSANAAN',
+      totalDokumenDiminta: 14,
+      dokumenTerkumpul: 3,
+      dokumenRevisi: 0,
+      dokumenValid: 2,
+      findings: []
+    };
+
+    const updated = [newEngagement, ...engagements];
+    setEngagements(updated);
+    setSelectedEngIndex(0);
+    setIsCreateStModalOpen(false);
+    toast.success(`Surat Tugas ${newStNumber} berhasil diterbitkan dan siap dilaksanakan!`);
+  };
 
   const handleSaveFinding = (e: React.FormEvent) => {
     e.preventDefault();
@@ -209,11 +312,19 @@ export default function EngagementsAuditPage() {
 
         <div className="flex items-center gap-2">
           <Button 
+            onClick={() => setIsCreateStModalOpen(true)}
+            className="bg-[#055838] hover:bg-[#04432b] text-white flex items-center gap-2 text-xs font-bold px-4 py-2 rounded-xl shadow-xs active:scale-95 transition-all"
+          >
+            <FilePlus className="w-4 h-4" />
+            + Buat Surat Tugas Baru
+          </Button>
+          <Button 
             onClick={handleExportLhp}
-            className="bg-[#055838] hover:bg-[#04432b] text-white flex items-center gap-2 text-xs font-bold px-4 py-2 rounded-xl shadow-sm"
+            variant="outline"
+            className="border-slate-300 text-slate-700 hover:bg-slate-50 flex items-center gap-2 text-xs font-bold px-4 py-2 rounded-xl shadow-xs"
           >
             <Printer className="w-4 h-4" />
-            Cetak / Ekspor Draf LHP Resmi
+            Ekspor Draf LHP
           </Button>
         </div>
       </div>
@@ -277,6 +388,50 @@ export default function EngagementsAuditPage() {
                 Status: {currentEng.statusPenugasan}
               </span>
               <p className="text-[11px] text-slate-400 mt-1">Tenggat Selesai: <strong>17 Hari Lagi</strong></p>
+            </div>
+          </div>
+
+          {/* Baris Tim Petugas Auditor & Tombol Aksi Surat Tugas */}
+          <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] uppercase font-bold text-slate-400">Tim Petugas Pemeriksa (ST):</span>
+                <span className="bg-emerald-100 text-[#055838] px-2 py-0.2 rounded font-bold text-[10px]">
+                  {1 + currentEng.anggotaAuditor.length} Petugas
+                </span>
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-bold text-slate-900 bg-white px-2.5 py-1 rounded-lg border border-slate-200 shadow-2xs">
+                  Ketua: {currentEng.ketuaAuditor}
+                </span>
+                {currentEng.anggotaAuditor.map((anggota, aIdx) => (
+                  <span key={aIdx} className="text-slate-700 bg-white px-2.5 py-1 rounded-lg border border-slate-200 shadow-2xs">
+                    Anggota {aIdx + 1}: {anggota}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleOpenManageTeam}
+                className="text-xs font-bold text-[#055838] border-emerald-300 hover:bg-emerald-50 flex items-center gap-1.5 rounded-lg py-1.5"
+              >
+                <Users className="w-3.5 h-3.5" />
+                Kelola Tim Petugas
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => setIsPrintStModalOpen(true)}
+                className="text-xs font-bold bg-[#055838] hover:bg-[#04432b] text-white flex items-center gap-1.5 rounded-lg py-1.5 shadow-xs"
+              >
+                <Printer className="w-3.5 h-3.5" />
+                Format Cetak ST
+              </Button>
             </div>
           </div>
 

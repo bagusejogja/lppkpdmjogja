@@ -658,31 +658,6 @@ export default function AuditDualPortalPage() {
         </div>
       </div>
 
-      {/* Banner Penjelasan Beda Peran Portal */}
-      <div className={`p-3 rounded-2xl border text-xs flex items-center justify-between gap-3 ${
-        activePortal === 'auditor' 
-          ? 'bg-amber-50/70 border-amber-200 text-amber-900' 
-          : 'bg-emerald-50/70 border-emerald-200 text-emerald-950'
-      }`}>
-        <div className="flex items-center gap-2">
-          <ShieldCheck className={`w-4 h-4 shrink-0 ${activePortal === 'auditor' ? 'text-amber-700' : 'text-[#055838]'}`} />
-          <span>
-            {activePortal === 'auditor' ? (
-              <>
-                <strong>Peran Aktif: Auditor LPPK (Pemeriksa Resmi)</strong> &ndash; Anda memiliki hak akses untuk <strong>memulai reviu</strong>, <strong>mengesahkan status Sah/Komplit</strong>, atau <strong>menerbitkan catatan revisi</strong> serta berdiskusi via chat.
-              </>
-            ) : (
-              <>
-                <strong>Peran Aktif: Auditee (Staff / Bendahara Unit)</strong> &ndash; Anda memiliki wewenang untuk <strong>mengunggah dokumen bukti</strong> (mendukung PDF, Word, Excel, Gambar), melampirkan catatan, dan merespon pertanyaan auditor.
-              </>
-            )}
-          </span>
-        </div>
-        <span className="text-[10px] font-mono font-bold bg-white/80 px-2 py-0.5 rounded-lg border shrink-0">
-          Waktu Server: WIB
-        </span>
-      </div>
-
       {/* ========================================================================= */}
       {/* 1. REKAP ANALITIK & PROGRES AUDIT (PERSIS ALA /engagements) - BISA COLLAPSE */}
       {/* ========================================================================= */}
@@ -879,14 +854,13 @@ export default function AuditDualPortalPage() {
                                 {/* Tombol Toggle Buka/Tutup Detail */}
                                 <button
                                   type="button"
-                                  className={`text-[11px] font-bold px-2.5 py-1 rounded-xl border flex items-center gap-1 transition-all active:scale-95 ${
+                                  className={`p-1.5 rounded-xl border flex items-center justify-center transition-all active:scale-95 ${
                                     isDocExpanded 
                                       ? 'bg-[#055838] text-white border-[#055838] shadow-xs' 
                                       : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
                                   }`}
                                 >
-                                  <span>{isDocExpanded ? 'Tutup Detail' : 'Buka Detail & Alur'}</span>
-                                  {isDocExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                                  {isDocExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                                 </button>
                               </div>
                             </div>
@@ -1083,7 +1057,14 @@ export default function AuditDualPortalPage() {
                                       </div>
 
                                       {/* Daftar Pesan Chat dengan Batas Scroll Maksimal */}
-                                      <div className="flex-1 overflow-y-auto max-h-56 space-y-2 p-1 text-xs pr-1.5 scrollbar-thin">
+                                      <div 
+                                        ref={(el) => {
+                                          if (el) {
+                                            el.scrollTop = el.scrollHeight;
+                                          }
+                                        }}
+                                        className="flex-1 overflow-y-auto max-h-56 space-y-2 p-1 text-xs pr-1.5 scrollbar-thin"
+                                      >
                                         {child.messages.length === 0 ? (
                                           <div className="text-center py-10 text-slate-400 text-[11px]">
                                             Belum ada catatan diskusi pada berkas ini.
