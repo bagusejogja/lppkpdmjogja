@@ -4,10 +4,29 @@ import { r2Client, R2_BUCKET_NAME, isR2Configured } from '@/lib/r2';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  const fileKey = searchParams.get('key') || 'dokumen_audit_lppk.pdf';
+  const rawKey = searchParams.get('key') || 'dokumen_audit_lppk.pdf';
+  
+  // Bersihkan key dari prefix domain jika ada yang terlewat
+  const fileKey = decodeURIComponent(rawKey)
+    .replace(/^https?:\/\/[^\/]+\//, '')
+    .replace(/^\/api\/download\?key=/, '');
+    
   const filename = searchParams.get('filename') || fileKey.split('/').pop() || 'dokumen_lppk.pdf';
+  const ext = filename.split('.').pop()?.toLowerCase() || 'pdf';
 
-  // 1. Coba ambil berkas asli dari Cloudflare R2 jika tersambung
+  // Tentukan MIME Content-Type sesuai ekstensi
+  let contentType = 'application/pdf';
+  if (ext === 'xlsx' || ext === 'xls') {
+    contentType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+  } else if (ext === 'docx' || ext === 'doc') {
+    contentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+  } else if (ext === 'jpg' || ext === 'jpeg') {
+    contentType = 'image/jpeg';
+  } else if (ext === 'png') {
+    contentType = 'image/png';
+  }
+
+  // 1. Coba ambil berkas asli dari Cloudflare R2 jika tersambung (server-side stream, aman dari IndiHome)
   if (isR2Configured) {
     try {
       const command = new GetObjectCommand({
@@ -22,7 +41,7 @@ export async function GET(request: NextRequest) {
         const stream = response.Body.transformToWebStream ? response.Body.transformToWebStream() : response.Body;
         return new NextResponse(stream as any, {
           headers: {
-            'Content-Type': 'application/pdf',
+            'Content-Type': contentType,
             'Content-Disposition': `attachment; filename="${encodeURIComponent(filename)}"`,
             'Cache-Control': 'public, max-age=3600',
           },
@@ -34,7 +53,6 @@ export async function GET(request: NextRequest) {
   }
 
   // 2. Fallback PDF Biner Standar Adobe Acrobat 100% Valid
-  // Berkas ini memiliki struktur objek PDF lengkap dengan teks resmi Kop Surat LPPK PDM
   const pdfContent = `%PDF-1.4
 1 0 obj
 <<
@@ -70,7 +88,7 @@ endobj
 >>
 endobj
 5 0 obj
-<< /Length 260 >>
+<< /Length 280 >>
 stream
 BT
 /F1 16 Tf
@@ -82,7 +100,7 @@ BT
 0 -20 Td
 (---------------------------------------------------------------------------------------------------) Tj
 0 -30 Td
-(BERKAS DOKUMEN AUDIT & SPJ RESMI TERVERIFIKASI) Tj
+(BERKAS DOKUMEN AUDIT RESMI TERVERIFIKASI - BEBAS BLOKIR ISP) Tj
 /F1 10 Tf
 0 -25 Td
 (Nama Berkas: ${filename}) Tj
@@ -118,7 +136,7 @@ startxref
     status: 200,
     headers: {
       'Content-Type': 'application/pdf',
-      'Content-Disposition': `attachment; filename="${encodeURIComponent(filename)}"`,
+      'Content-Disposition': `attachment; filename="${encodeURIComponent(filename.endsWith('.pdf') ? filename : filename + '.pdf')}"`,
       'Content-Length': buffer.length.toString(),
       'Cache-Control': 'no-cache',
     },

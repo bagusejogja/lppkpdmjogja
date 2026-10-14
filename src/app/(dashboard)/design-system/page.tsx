@@ -3,7 +3,9 @@
 import React, { useState } from 'react';
 import { 
   Calendar, 
-  UploadCloud, 
+  UploadCloud,
+  Upload,
+  Pencil, 
   FolderTree, 
   BarChart3, 
   Edit3, 
@@ -1043,19 +1045,94 @@ export default function DesignSystemPage() {
               Format standar tombol tindakan pada tabel transaksi audit dan SPJ.
             </CardDescription>
           </CardHeader>
-          <CardContent className="p-5 flex items-center justify-around flex-wrap gap-4 text-xs">
-            <Button size="sm" className="bg-[#055838] hover:bg-[#04432b] text-white">
-              <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
-              Verifikasi ACC
-            </Button>
-            <Button size="sm" variant="outline" className="text-amber-700 border-amber-300 hover:bg-amber-50">
-              <AlertTriangle className="w-3.5 h-3.5 mr-1" />
-              Minta Revisi
-            </Button>
-            <Button size="sm" variant="outline" className="text-rose-700 border-rose-300 hover:bg-rose-50">
-              <Trash2 className="w-3.5 h-3.5 mr-1" />
-              Tolak Berkas
-            </Button>
+          <CardContent className="p-5 space-y-6 text-xs">
+            {/* 1. Baris Tombol Soft Berbobot Standar */}
+            <div className="space-y-2">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                Gaya 1: Soft Tint Action Buttons (Lembut, Harmonis & Interaktif)
+              </span>
+              <div className="flex items-center flex-wrap gap-2.5">
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-300 hover:bg-emerald-100 hover:border-emerald-400 active:scale-95 transition-all shadow-2xs"
+                >
+                  <CheckCircle2 className="w-4 h-4 text-emerald-700" />
+                  <span>Setujui & Sahkan (ACC)</span>
+                </button>
+
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-50 text-amber-800 border border-amber-300 hover:bg-amber-100 hover:border-amber-400 active:scale-95 transition-all shadow-2xs"
+                >
+                  <AlertTriangle className="w-4 h-4 text-amber-700" />
+                  <span>Minta Revisi / Catatan</span>
+                </button>
+
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-blue-50 text-blue-800 border border-blue-300 hover:bg-blue-100 hover:border-blue-400 active:scale-95 transition-all shadow-2xs"
+                >
+                  <Eye className="w-4 h-4 text-blue-700" />
+                  <span>Mulai Reviu Pengujian</span>
+                </button>
+
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-rose-50 text-rose-800 border border-rose-300 hover:bg-rose-100 hover:border-rose-400 active:scale-95 transition-all shadow-2xs"
+                >
+                  <Trash2 className="w-4 h-4 text-rose-700" />
+                  <span>Tolak Pengajuan</span>
+                </button>
+
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[#055838] text-white hover:bg-[#04432b] active:scale-95 transition-all shadow-xs"
+                >
+                  <Upload className="w-4 h-4" />
+                  <span>Unggah Berkas Bukti</span>
+                </button>
+              </div>
+            </div>
+
+            {/* 2. Baris Tombol Ikon Kompak Presisi */}
+            <div className="space-y-2 pt-3 border-t border-slate-100">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                Gaya 2: Compact Icon Actions (Minimalis, Presisi & Bebas Kepanjangan)
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  className="p-2 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-300 hover:bg-emerald-100 active:scale-95 transition-all shadow-2xs"
+                  title="Unduh Berkas Aman (Bebas Blokir IndiHome)"
+                >
+                  <Download className="w-4 h-4 text-emerald-800" />
+                </button>
+
+                <button
+                  type="button"
+                  className="p-2 rounded-xl bg-blue-50 text-blue-800 border border-blue-300 hover:bg-blue-100 active:scale-95 transition-all shadow-2xs"
+                  title="Edit Rincian Data"
+                >
+                  <Pencil className="w-4 h-4 text-blue-800" />
+                </button>
+
+                <button
+                  type="button"
+                  className="p-2 rounded-xl bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200 active:scale-95 transition-all shadow-2xs"
+                  title="Lihat Pratinjau Detail"
+                >
+                  <Eye className="w-4 h-4 text-slate-700" />
+                </button>
+
+                <button
+                  type="button"
+                  className="p-2 rounded-xl bg-rose-50 text-rose-800 border border-rose-300 hover:bg-rose-100 active:scale-95 transition-all shadow-2xs"
+                  title="Hapus Data"
+                >
+                  <Trash2 className="w-4 h-4 text-rose-800" />
+                </button>
+              </div>
+            </div>
           </CardContent>
         </Card>
       )}

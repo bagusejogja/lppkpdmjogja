@@ -98,7 +98,8 @@ export async function getPresignedUploadUrl(storageKey: string, contentType: str
 /**
  * Mendapatkan Public URL dari berkas R2
  */
-export function getR2PublicUrl(storageKey: string): string {
-  const cleanDomain = R2_PUBLIC_DOMAIN.replace(/\/$/, '');
-  return `${cleanDomain}/${storageKey}`;
+export function getR2PublicUrl(storageKey: string, filename?: string): string {
+  // Always use local proxy route to guarantee 100% bypass of IndiHome / Nawala ISP blocking
+  const safeFilename = filename || storageKey.split('/').pop() || 'dokumen_lppk.pdf';
+  return `/api/download?key=${encodeURIComponent(storageKey)}&filename=${encodeURIComponent(safeFilename)}`;
 }

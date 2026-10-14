@@ -102,7 +102,7 @@ export default function SopPage() {
                 <Calendar className="w-3 h-3" /> {sop.published_date}
               </span>
               <a
-                href={sop.file_url}
+                href={`/api/download?key=${encodeURIComponent(sop.file_url)}&filename=${encodeURIComponent(sop.title)}.pdf`}
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#055838] hover:text-[#034129]"
