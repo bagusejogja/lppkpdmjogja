@@ -23,7 +23,7 @@ import { Input } from '@/components/ui/Input';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/Card';
 import { MOCK_USERS } from '@/lib/mock-data';
 
-export default function ProfilePage() {
+function ProfileContent() {
   const searchParams = useSearchParams();
   const initialTab = searchParams.get('tab') || 'unit';
 
@@ -428,5 +428,18 @@ export default function ProfilePage() {
         </Card>
       )}
     </div>
+  );
+}
+
+
+export default function ProfilePage() {
+  return (
+    <React.Suspense fallback={
+      <div className="p-8 text-center text-slate-500 text-sm">
+        Memuat profil pengguna...
+      </div>
+    }>
+      <ProfileContent />
+    </React.Suspense>
   );
 }
