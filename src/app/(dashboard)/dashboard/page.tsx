@@ -44,7 +44,8 @@ import toast from 'react-hot-toast';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { StatusBadge } from '@/components/ui/Badge';
-import { MOCK_DOCUMENT_REQUESTS, MOCK_SPJS } from '@/lib/mock-data';
+import { MOCK_DOCUMENT_REQUESTS, MOCK_SPJS, MOCK_USERS } from '@/lib/mock-data';
+import { getActiveAuthState, isUserAssignedToUnit, AuthContextState } from '@/lib/auth-helpers';
 
 // Struktur Data Unit yang Sedang Diaudit dengan Rincian Dokumen Diminta
 interface AuditDocumentItem {
@@ -278,6 +279,43 @@ export default function DashboardPage() {
   const [selectedUnitType, setSelectedUnitType] = useState('ALL');
   const [selectedPeriode, setSelectedPeriode] = useState('2026');
 
+  // State Otorisasi & Peran Aktif (LPPK Read-Only vs Auditor Tugas)
+  const [authState, setAuthState] = useState<AuthContextState>({
+    currentUser: MOCK_USERS[0],
+    activeRole: 'SUPER_ADMIN',
+    isLppkLeader: true,
+    isFieldAuditor: false
+  });
+
+  React.useEffect(() => {
+    setAuthState(getActiveAuthState());
+
+    const handleSyncAuth = () => {
+      setAuthState(getActiveAuthState());
+    };
+
+    window.addEventListener('lppk_unit_changed', handleSyncAuth);
+    window.addEventListener('storage', handleSyncAuth);
+    return () => {
+      window.removeEventListener('lppk_unit_changed', handleSyncAuth);
+      window.removeEventListener('storage', handleSyncAuth);
+    };
+  }, []);
+
+  // Handler Cepat Switch Simulasi Akun Pemeriksa
+  const handleQuickSwitchUser = (userId: string) => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('lppk_active_user_id', userId);
+      localStorage.setItem('lppk_active_group_idx', '0');
+      const targetUser = MOCK_USERS.find(u => u.id === userId);
+      if (targetUser) {
+        localStorage.setItem('lppk_active_role', targetUser.role);
+        toast.success(`Beralih akun ke: ${targetUser.full_name} (${targetUser.role})`);
+      }
+      window.dispatchEvent(new Event('lppk_unit_changed'));
+    }
+  };
+
   // State Accordion / Collapse Unit yang Sedang Diaudit
   const [expandedUnitIds, setExpandedUnitIds] = useState<Record<string, boolean>>({
     'unit-audit-1': true // default unit pertama dibuka
@@ -302,6 +340,19 @@ export default function DashboardPage() {
   const revisiDocs = MOCK_DOCUMENT_REQUESTS.filter(d => d.status === 'REVISI').length;
 
   const totalSpjNominal = MOCK_SPJS.reduce((acc: number, curr: any) => acc + (curr.total_nominal || 0), 0);
+
+  // =========================================================================
+  // ATURAN OTORISASI PENUGASAN:
+  // 1. Pimpinan LPPK: Melihat seluruh unit (Mode Read-Only)
+  // 2. Auditor: HANYA melihat unit yang resmi ditugaskan kepadanya di Surat Tugas
+  // =========================================================================
+  const visibleAuditUnits = ACTIVE_AUDIT_UNITS.filter(unit => {
+    if (authState.isLppkLeader) {
+      return true; // Pimpinan LPPK memantau seluruh unit
+    }
+    // Auditor lapangan hanya melihat unit yang ditugaskan kepada dirinya
+    return isUserAssignedToUnit(authState.currentUser.full_name, unit.ketuaAuditor, unit.anggotaAuditor);
+  });
 
   // Data Pie Chart Persentase Dokumen Audit
   const pieData = [
@@ -502,8 +553,17 @@ export default function DashboardPage() {
                 <ShieldCheck className="w-5 h-5" />
               </div>
               <div>
-                <CardTitle className="text-base font-bold text-slate-900">
-                  Daftar Unit Yang Sedang Diaudit & Pemantauan Dokumen Terkini
+                <CardTitle className="text-base font-bold text-slate-900 flex items-center gap-2">
+                  <span>Daftar Unit Yang Sedang Diaudit & Pemantauan Dokumen Terkini</span>
+                  {authState.isLppkLeader ? (
+                    <span className="text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300 px-2 py-0.5 rounded-full flex items-center gap-1">
+                      <span>👁️</span> Mode Pengawasan LPPK (Read-Only)
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-bold bg-emerald-100 text-[#055838] border border-emerald-300 px-2 py-0.5 rounded-full flex items-center gap-1">
+                      <span>🛡️</span> Tugas Auditor Aktif ({visibleAuditUnits.length} Unit)
+                    </span>
+                  )}
                 </CardTitle>
                 <CardDescription className="text-xs text-slate-500 mt-0.5">
                   Klik tanda panah atau baris unit untuk melihat <strong>rincian data yang diminta</strong>, <strong>posisi status dokumen</strong>, dan <strong>mengunduh berkas bukti aman</strong>.
@@ -531,8 +591,50 @@ export default function DashboardPage() {
         </CardHeader>
 
         <CardContent className="p-0">
-          <div className="divide-y divide-slate-200">
-            {ACTIVE_AUDIT_UNITS.map((unit) => {
+          {/* Banner Penjelasan Hak Akses & Simulasi Akun Auditor */}
+          <div className="p-3 bg-slate-50 border-b border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2 text-slate-700">
+              <span className="font-bold text-slate-900">Pengguna Aktif:</span>
+              <span className="bg-white px-2.5 py-1 rounded-lg border border-slate-200 font-semibold text-[#055838] shadow-2xs">
+                {authState.currentUser.full_name} ({authState.activeRole})
+              </span>
+              <span className="text-[11px] text-slate-500 hidden sm:inline">
+                {authState.isLppkLeader 
+                  ? '• Menampilkan seluruh 165 unit dalam status Read-Only untuk supervisi pimpinan.'
+                  : `• Hanya menampilkan unit yang ditugaskan kepada Anda (${visibleAuditUnits.length} unit aktif).`
+                }
+              </span>
+            </div>
+
+            {/* Selector Cepat Simulasi Auditor / Pimpinan LPPK */}
+            <div className="flex items-center gap-1.5 shrink-0">
+              <span className="text-[10px] font-bold uppercase text-slate-500">Uji Akses:</span>
+              <select
+                value={authState.currentUser.id}
+                onChange={(e) => handleQuickSwitchUser(e.target.value)}
+                className="bg-white border border-slate-300 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-800 shadow-2xs focus:outline-hidden"
+              >
+                <option value="u-1">Drs. H. Akhid (Pimpinan LPPK - Read-Only)</option>
+                <option value="u-6">Noviar Handi (Auditor: Lazismu & SMPM 2)</option>
+                <option value="u-2">Muhammad Faris (Auditor: Masjid Taqwa)</option>
+                <option value="u-7">Drs. H. M. Husnan (Auditor: Lazismu & Masjid)</option>
+              </select>
+            </div>
+          </div>
+
+          {visibleAuditUnits.length === 0 ? (
+            <div className="p-10 text-center space-y-2 bg-white">
+              <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
+                <ShieldCheck className="w-6 h-6" />
+              </div>
+              <h4 className="font-bold text-slate-800 text-sm">Tidak Ada Penugasan Unit untuk Akun Ini</h4>
+              <p className="text-xs text-slate-500 max-w-md mx-auto">
+                Sebagai auditor lapangan, Anda hanya dapat mengakses dan melihat unit yang resmi tercantum dalam Surat Tugas penugasan Anda.
+              </p>
+            </div>
+          ) : (
+            <div className="divide-y divide-slate-200">
+            {visibleAuditUnits.map((unit) => {
               const isExpanded = !!expandedUnitIds[unit.id];
               const percentCompliant = Math.round((unit.dokumenValid / unit.totalDokumen) * 100);
 
@@ -741,7 +843,8 @@ export default function DashboardPage() {
                 </div>
               );
             })}
-          </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 

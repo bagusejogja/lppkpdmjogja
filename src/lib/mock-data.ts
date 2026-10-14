@@ -145,6 +145,32 @@ export const MOCK_USERS: User[] = [
     groups: [
       { groupId: 'grp-pcm-gondomanan', groupName: 'Ketua PCM Gondomanan', role: 'APPROVER_SPJ', isDefault: true }
     ]
+  },
+  {
+    id: 'u-6',
+    organization_id: '11111111-1111-1111-1111-111111111111',
+    email: 'noviar.handi@pdmjogja.org',
+    full_name: 'Noviar Handi Al Faani, SE., Akt.',
+    role: 'AUDITOR_INTERNAL',
+    phone: '081234567895',
+    is_active: true,
+    created_at: '2026-02-20T00:00:00Z',
+    groups: [
+      { groupId: 'grp-auditor-sekolah', groupName: 'Tim Auditor AUM & Lazismu', role: 'AUDITOR_INTERNAL', isDefault: true }
+    ]
+  },
+  {
+    id: 'u-7',
+    organization_id: '11111111-1111-1111-1111-111111111111',
+    email: 'husnan@pdmjogja.org',
+    full_name: 'Drs. H. M. Husnan, M.Ag.',
+    role: 'AUDITOR_INTERNAL',
+    phone: '081234567896',
+    is_active: true,
+    created_at: '2026-02-22T00:00:00Z',
+    groups: [
+      { groupId: 'grp-auditor-lazismu', groupName: 'Tim Auditor Lazismu & Kemantren', role: 'AUDITOR_INTERNAL', isDefault: true }
+    ]
   }
 ];
 

@@ -53,6 +53,8 @@ import {
   RotateCcw
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { MOCK_USERS } from '@/lib/mock-data';
+import { getActiveAuthState, isUserAssignedToUnit, AuthContextState } from '@/lib/auth-helpers';
 
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -344,6 +346,29 @@ const INITIAL_AUDIT_ITEMS: AuditDocItem[] = [
 export default function AuditDualPortalPage() {
   const [auditItems, setAuditItems] = useState<AuditDocItem[]>(INITIAL_AUDIT_ITEMS);
   const [activePortal, setActivePortal] = useState<'auditee' | 'auditor'>('auditor');
+
+  // State Otorisasi & Peran Aktif
+  const [authState, setAuthState] = useState<AuthContextState>({
+    currentUser: MOCK_USERS[0],
+    activeRole: 'SUPER_ADMIN',
+    isLppkLeader: true,
+    isFieldAuditor: false
+  });
+
+  React.useEffect(() => {
+    setAuthState(getActiveAuthState());
+
+    const handleSyncAuth = () => {
+      setAuthState(getActiveAuthState());
+    };
+
+    window.addEventListener('lppk_unit_changed', handleSyncAuth);
+    window.addEventListener('storage', handleSyncAuth);
+    return () => {
+      window.removeEventListener('lppk_unit_changed', handleSyncAuth);
+      window.removeEventListener('storage', handleSyncAuth);
+    };
+  }, []);
   const [expandedParents, setExpandedParents] = useState<Set<string>>(new Set(['pg-1', 'pg-2', 'pg-3', 'pg-4', 'pg-5']));
   
   // Inline Accordion: Dokumen mana yang sedang terbuka tepat di bawah barisnya
@@ -659,6 +684,22 @@ export default function AuditDualPortalPage() {
       </div>
 
       {/* ========================================================================= */}
+      {/* Banner Supervisi Pimpinan LPPK vs Auditor Bertugas */}
+      {authState.isLppkLeader && (
+        <div className="p-3 bg-amber-50/80 border border-amber-200 rounded-2xl flex items-center justify-between gap-3 text-xs text-amber-950 shadow-2xs">
+          <div className="flex items-center gap-2">
+            <span className="p-1.5 bg-amber-200 rounded-lg text-amber-900 font-bold">👁️</span>
+            <div>
+              <span className="font-bold">Mode Pengawasan Pimpinan LPPK (Read-Only):</span>{' '}
+              <span>Anda dapat memantau seluruh riwayat berkas dan diskusi chat. Wewenang eksekusi keputusan (ACC / Revisi) berada pada Tim Petugas Auditor lapangan.</span>
+            </div>
+          </div>
+          <span className="text-[10px] bg-white px-2.5 py-1 rounded-lg border border-amber-300 font-bold text-amber-900 shrink-0">
+            Hanya Baca
+          </span>
+        </div>
+      )}
+
       {/* 1. REKAP ANALITIK & PROGRES AUDIT (PERSIS ALA /engagements) - BISA COLLAPSE */}
       {/* ========================================================================= */}
       <Card className="rounded-2xl border-slate-200 shadow-xs overflow-hidden bg-white">
@@ -1216,6 +1257,12 @@ export default function AuditDualPortalPage() {
                                             <Upload className="w-4 h-4" />
                                             <span>{child.attachment ? 'Unggah Berkas Versi Revisi' : 'Unggah Dokumen Bukti'}</span>
                                           </button>
+                                        ) : authState.isLppkLeader ? (
+                                          <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-center">
+                                            <span className="text-[11px] font-semibold text-slate-500 block">
+                                              🔒 Status Read-Only (Supervisi LPPK)
+                                            </span>
+                                          </div>
                                         ) : (
                                           <div className="space-y-1.5">
                                             <span className="text-[10px] font-bold text-slate-600 uppercase block">Keputusan Verifikator:</span>

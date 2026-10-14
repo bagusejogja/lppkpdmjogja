@@ -41,6 +41,8 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
+import { MOCK_USERS } from '@/lib/mock-data';
+import { getActiveAuthState, isUserAssignedToUnit, AuthContextState } from '@/lib/auth-helpers';
 import { Input, Select, Textarea } from '@/components/ui/Forms';
 
 interface FindingKkp {
@@ -146,6 +148,42 @@ const MOCK_ENGAGEMENTS: EngagementData[] = [
 
 export default function EngagementsAuditPage() {
   const [engagements, setEngagements] = useState<EngagementData[]>(MOCK_ENGAGEMENTS);
+
+  // State Otorisasi & Peran Aktif
+  const [authState, setAuthState] = useState<AuthContextState>({
+    currentUser: MOCK_USERS[0],
+    activeRole: 'SUPER_ADMIN',
+    isLppkLeader: true,
+    isFieldAuditor: false
+  });
+
+  React.useEffect(() => {
+    setAuthState(getActiveAuthState());
+
+    const handleSyncAuth = () => {
+      setAuthState(getActiveAuthState());
+    };
+
+    window.addEventListener('lppk_unit_changed', handleSyncAuth);
+    window.addEventListener('storage', handleSyncAuth);
+    return () => {
+      window.removeEventListener('lppk_unit_changed', handleSyncAuth);
+      window.removeEventListener('storage', handleSyncAuth);
+    };
+  }, []);
+
+  const handleQuickSwitchUser = (userId: string) => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('lppk_active_user_id', userId);
+      localStorage.setItem('lppk_active_group_idx', '0');
+      const targetUser = MOCK_USERS.find(u => u.id === userId);
+      if (targetUser) {
+        localStorage.setItem('lppk_active_role', targetUser.role);
+        toast.success(`Beralih akun ke: ${targetUser.full_name} (${targetUser.role})`);
+      }
+      window.dispatchEvent(new Event('lppk_unit_changed'));
+    }
+  };
   
   // State Accordion / Collapse Tabel Penugasan (Bisa buka banyak baris)
   const [expandedEngIds, setExpandedEngIds] = useState<Record<string, boolean>>({
@@ -347,6 +385,19 @@ export default function EngagementsAuditPage() {
     setIsPrintStModalOpen(true);
   };
 
+  // =========================================================================
+  // ATURAN OTORISASI PENUGASAN:
+  // 1. Pimpinan LPPK: Memantau seluruh penugasan dalam mode Read-Only
+  // 2. Auditor: HANYA melihat penugasan yang menugaskan dirinya di Surat Tugas
+  // =========================================================================
+  const visibleEngagements = engagements.filter(eng => {
+    if (authState.isLppkLeader) {
+      return true; // Pimpinan LPPK memantau seluruh penugasan
+    }
+    // Auditor lapangan hanya melihat penugasan di mana ia menjadi Ketua atau Anggota
+    return isUserAssignedToUnit(authState.currentUser.full_name, eng.ketuaAuditor, eng.anggotaAuditor);
+  });
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
       {/* Header Halaman */}
@@ -395,8 +446,17 @@ export default function EngagementsAuditPage() {
                 <FileCheck2 className="w-5 h-5" />
               </div>
               <div>
-                <CardTitle className="text-base font-bold text-slate-900">
-                  Daftar Penugasan Pemeriksaan (Surat Tugas Aktif)
+                <CardTitle className="text-base font-bold text-slate-900 flex items-center gap-2">
+                  <span>Daftar Penugasan Pemeriksaan (Surat Tugas Aktif)</span>
+                  {authState.isLppkLeader ? (
+                    <span className="text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300 px-2 py-0.5 rounded-full flex items-center gap-1">
+                      <span>👁️</span> Mode Pengawasan LPPK (Read-Only)
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-bold bg-emerald-100 text-[#055838] border border-emerald-300 px-2 py-0.5 rounded-full flex items-center gap-1">
+                      <span>🛡️</span> Tugas Auditor Aktif ({visibleEngagements.length} Penugasan)
+                    </span>
+                  )}
                 </CardTitle>
                 <CardDescription className="text-xs text-slate-500 mt-0.5">
                   Klik tanda panah atau baris penugasan untuk membuka <strong>Pelacak Progres Dokumen (PBC)</strong>, <strong>Tim Petugas</strong>, dan <strong>Kertas Kerja Pemeriksaan (KKP)</strong>.
@@ -406,15 +466,57 @@ export default function EngagementsAuditPage() {
 
             <div className="flex items-center gap-2">
               <span className="text-xs bg-slate-100 text-slate-700 px-3 py-1 rounded-xl font-bold border border-slate-200">
-                Total: {engagements.length} Penugasan
+                Total: {visibleEngagements.length} Penugasan {authState.isFieldAuditor ? '(Tugas Saya)' : '(Supervisi LPPK)'}
               </span>
             </div>
           </div>
         </CardHeader>
 
         <CardContent className="p-0">
-          <div className="divide-y divide-slate-200">
-            {engagements.map((eng) => {
+          {/* Banner Penjelasan Hak Akses & Simulasi Akun Auditor */}
+          <div className="p-3 bg-slate-50 border-b border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2 text-slate-700">
+              <span className="font-bold text-slate-900">Pengguna Aktif:</span>
+              <span className="bg-white px-2.5 py-1 rounded-lg border border-slate-200 font-semibold text-[#055838] shadow-2xs">
+                {authState.currentUser.full_name} ({authState.activeRole})
+              </span>
+              <span className="text-[11px] text-slate-500 hidden sm:inline">
+                {authState.isLppkLeader 
+                  ? '• Mode Read-Only pengawasan pimpinan LPPK untuk seluruh penugasan.'
+                  : `• Hanya menampilkan penugasan yang menugaskan Anda (${visibleEngagements.length} penugasan).`
+                }
+              </span>
+            </div>
+
+            {/* Selector Cepat Simulasi Auditor / Pimpinan LPPK */}
+            <div className="flex items-center gap-1.5 shrink-0">
+              <span className="text-[10px] font-bold uppercase text-slate-500">Uji Akses:</span>
+              <select
+                value={authState.currentUser.id}
+                onChange={(e) => handleQuickSwitchUser(e.target.value)}
+                className="bg-white border border-slate-300 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-800 shadow-2xs focus:outline-hidden"
+              >
+                <option value="u-1">Drs. H. Akhid (Pimpinan LPPK - Read-Only)</option>
+                <option value="u-6">Noviar Handi (Auditor: Lazismu & SMPM 2)</option>
+                <option value="u-2">Muhammad Faris (Auditor: Masjid Taqwa)</option>
+                <option value="u-7">Drs. H. M. Husnan (Auditor: Lazismu & Masjid)</option>
+              </select>
+            </div>
+          </div>
+
+          {visibleEngagements.length === 0 ? (
+            <div className="p-10 text-center space-y-2 bg-white">
+              <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
+                <ShieldCheck className="w-6 h-6" />
+              </div>
+              <h4 className="font-bold text-slate-800 text-sm">Tidak Ada Surat Tugas untuk Akun Auditor Ini</h4>
+              <p className="text-xs text-slate-500 max-w-md mx-auto">
+                Anda hanya dapat melihat dan mengakses ruang penugasan jika nama Anda tercantum dalam Surat Tugas sebagai Ketua atau Anggota Tim Auditor.
+              </p>
+            </div>
+          ) : (
+            <div className="divide-y divide-slate-200">
+            {visibleEngagements.map((eng) => {
               const isExpanded = !!expandedEngIds[eng.id];
               const progressPercent = Math.round((eng.dokumenValid / eng.totalDokumenDiminta) * 100);
               const currentSubTab = activeSubTabs[eng.id] || 'pbc_tracker';
@@ -744,14 +846,20 @@ export default function EngagementsAuditPage() {
                                 Temuan terstruktur standar LPPK PDM untuk bahan penyusunan LHP resmi.
                               </p>
                             </div>
-                            <Button
-                              type="button"
-                              onClick={() => handleOpenAddFinding(eng.id)}
-                              className="bg-[#055838] hover:bg-[#04432b] text-white flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl shadow-2xs"
-                            >
-                              <Plus className="w-3.5 h-3.5" />
-                              + Catat Temuan Baru
-                            </Button>
+                            {authState.isLppkLeader ? (
+                              <span className="text-[11px] font-bold text-amber-800 bg-amber-100 border border-amber-300 px-3 py-1.5 rounded-xl">
+                                🔒 Mode Read-Only (Supervisi Pimpinan LPPK)
+                              </span>
+                            ) : (
+                              <Button
+                                type="button"
+                                onClick={() => handleOpenAddFinding(eng.id)}
+                                className="bg-[#055838] hover:bg-[#04432b] text-white flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl shadow-2xs"
+                              >
+                                <Plus className="w-3.5 h-3.5" />
+                                + Catat Temuan Baru
+                              </Button>
+                            )}
                           </div>
 
                           {eng.findings.length === 0 ? (
@@ -831,7 +939,8 @@ export default function EngagementsAuditPage() {
                 </div>
               );
             })}
-          </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
